@@ -8,6 +8,14 @@ Author: Aditya Dogra
 - MCP server: `ietf-wg-mcp`
 - Daily runner: `ietf-wg-daily`
 
+## Python Compatibility
+- Base application: Python 3.9+
+- MCP support: Python 3.10+
+- Bootstrap tooling (`scripts/bootstrap.py`) provides a seamless MCP path:
+  - detects when MCP is requested on Python 3.9,
+  - auto-selects a Python 3.10+ interpreter when available,
+  - auto-creates `.venv-mcp` by default to avoid clobbering a 3.9 venv.
+
 ## Core Modules
 - `src/ietf_wg_agent/ietf.py`: IETF data fetch/parsing (WG lookup, charter, drafts, discussions).
   - Includes meetings update parsing (agenda + minutes for last 2 meetings).

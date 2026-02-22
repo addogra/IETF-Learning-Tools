@@ -6,6 +6,12 @@ Author: Aditya Dogra
 This folder is the implementation design source-of-truth for maintainers and agents.
 Use it before changing parsing logic, runtime flows, or module interfaces.
 
+## Runtime Compatibility Contract
+- Base runtime compatibility: Python 3.9+
+- MCP runtime compatibility: Python 3.10+
+- CI validates compatibility for Python 3.9/3.10/3.11/3.12.
+- MCP install path is validated separately on Python 3.10+.
+
 ## Recommended Reading Order
 1. `core-beliefs.md`
 2. `../DESIGN.md`

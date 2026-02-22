@@ -14,7 +14,10 @@ A local MCP server + CLI agent for IETF Working Group discovery and charter summ
 
 ## Install (Cross-Platform)
 
-Python version: 3.9+ is required.
+Python compatibility policy:
+- Base app (CLI + daily features): Python `3.9+`
+- MCP server (`ietf-wg-mcp`): Python `3.10+`
+- Tested in CI on Python `3.9`, `3.10`, `3.11`, and `3.12`
 
 ### Fast path (recommended)
 
@@ -47,11 +50,30 @@ make setup
 Useful setup variants:
 - `make setup` -> install `.[full]`
 - `make setup-base` -> install base dependencies only
-- `make setup-mcp` -> install base + MCP dependencies
+- `make setup-mcp` -> install base + MCP dependencies with automatic Python 3.10+ upgrade path
 
 Note: MCP dependency is installed only on Python 3.10+.  
 On Python 3.9, setup still succeeds and MCP-specific runtime remains unavailable.
 On Python 3.9, setup also pins `urllib3<2` automatically to avoid LibreSSL warnings.
+
+### Seamless MCP setup (recommended for MCP users)
+
+If you want MCP support, run:
+
+```bash
+./scripts/setup.sh --extras mcp
+```
+
+Behavior:
+- If your current Python is 3.10+, MCP is installed into `.venv` (or your chosen `--venv`).
+- If your current Python is 3.9 and a 3.10+ interpreter exists on PATH, setup auto-creates `.venv-mcp` and installs MCP there.
+- If no 3.10+ interpreter is found, setup prints OS-specific install instructions and exits cleanly.
+
+You can also force a specific interpreter:
+
+```bash
+./scripts/setup.sh --extras mcp --python python3.11
+```
 
 ### Manual install (all platforms)
 
@@ -163,6 +185,9 @@ launchctl load ~/Library/LaunchAgents/com.addogra.ietf-wg-daily.plist
 ```bash
 ietf-wg-mcp
 ```
+
+Requirement: Python 3.10+ runtime with MCP extras installed.  
+If you used the seamless setup on Python 3.9, activate `.venv-mcp` first.
 
 Exposed MCP tools:
 

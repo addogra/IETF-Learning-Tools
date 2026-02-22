@@ -1,3 +1,1 @@
-Author: Aditya Dogra
-
 ietf_wg_agent

@@ -27,6 +27,14 @@ The application helps users monitor IETF Working Groups (WGs) by collecting and 
   - `ietf-wg-daily-updates`
   - `ietf-wg-daily-updates-scheduler`
 
+## 3.1 Python Version Contract
+- Entire project baseline: Python 3.9+
+- MCP runtime contract: Python 3.10+
+- Bootstrap behavior when MCP is requested from Python 3.9:
+  - auto-detect Python 3.10+ interpreter on PATH,
+  - create/use `.venv-mcp` by default,
+  - provide OS-specific install guidance if no compatible interpreter exists.
+
 ## 4. High-Level Architecture (ASCII)
 ```text
                          +----------------------------------+

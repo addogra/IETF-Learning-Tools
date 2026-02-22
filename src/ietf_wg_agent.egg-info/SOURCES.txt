@@ -1,5 +1,3 @@
-Author: Aditya Dogra
-
 README.md
 pyproject.toml
 src/ietf_wg_agent/__init__.py
