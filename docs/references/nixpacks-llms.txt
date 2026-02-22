@@ -1,0 +1,5 @@
+Author: Aditya Dogra
+
+Nixpacks note:
+- Ensure python runtime and pip are available.
+- Project depends on network access to IETF endpoints at runtime.

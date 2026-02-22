@@ -1,0 +1,6 @@
+Author: Aditya Dogra
+
+[console_scripts]
+ietf-wg-agent = ietf_wg_agent.cli:main
+ietf-wg-daily = ietf_wg_agent.daily:main
+ietf-wg-mcp = ietf_wg_agent.server:main

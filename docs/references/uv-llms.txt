@@ -1,0 +1,5 @@
+Author: Aditya Dogra
+
+uv note:
+- `uv pip install -e .` can be used as alternative install path.
+- Keep pyproject metadata authoritative.

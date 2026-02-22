@@ -1,0 +1,42 @@
+Author: Aditya Dogra
+
+# ARCHITECTURE.md
+
+## System Overview
+`ietf-wg-agent` is a Python application with 3 entrypoints:
+- CLI app: `ietf-wg-agent`
+- MCP server: `ietf-wg-mcp`
+- Daily runner: `ietf-wg-daily`
+
+## Core Modules
+- `src/ietf_wg_agent/ietf.py`: IETF data fetch/parsing (WG lookup, charter, drafts, discussions).
+  - Includes meetings update parsing (agenda + minutes for last 2 meetings).
+  - Includes upcoming IETF agenda discovery (next meeting + WG agenda summary).
+  - Includes last completed IETF meeting summary (WG minutes).
+- `src/ietf_wg_agent/summarizer.py`: text summarization for charters and discussion threads.
+- `src/ietf_wg_agent/cli.py`: interactive user flow.
+- `src/ietf_wg_agent/server.py`: MCP tool registration and orchestration.
+- `src/ietf_wg_agent/daily.py`: periodic report/email workflow.
+- `src/ietf_wg_agent/discussion_scheduler.py`: recurring scheduler for daily discussion updates.
+- `src/ietf_wg_agent/notifier.py`: SMTP delivery with retry/backoff/jitter.
+- `src/ietf_wg_agent/subscriptions.py`: local subscription persistence.
+
+## Skills Layer
+- Repository-level skill registry: `SKILLS.md`
+- Per-feature skill docs: `skills/*/SKILL.md`
+- Skill docs define purpose, inputs, steps, outputs, failure handling, and linked tests.
+- Skill correctness is validated by `tests/test_skills_docs.py`.
+
+## External Dependencies
+- Datatracker API/pages: `https://datatracker.ietf.org`
+- IETF mailarchive: `https://mailarchive.ietf.org`
+- SMTP server (configurable)
+
+## Data Stores
+- Subscription DB: `~/.ietf_wg_agent_subscriptions.json`
+- Reports: `reports/daily-YYYY-MM-DD.txt`
+
+## Reliability Strategy
+- API-first parsing with HTML fallbacks.
+- Defensive parsers for multiple page layouts.
+- Test suite covers CLI flows, suggestions, drafts/status/abstract parsing, and discussion summaries.

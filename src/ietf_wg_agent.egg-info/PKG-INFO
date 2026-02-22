@@ -1,0 +1,108 @@
+Author: Aditya Dogra
+
+Metadata-Version: 2.4
+Name: ietf-wg-agent
+Version: 0.1.0
+Summary: MCP/agent for IETF working-group charter summaries and daily updates
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: requests>=2.31.0
+Requires-Dist: beautifulsoup4>=4.12.3
+Requires-Dist: mcp>=1.0.0
+
+# ietf-wg-agent
+
+A local MCP server + CLI agent for IETF Working Group discovery and charter summaries.
+
+## What it does
+
+- Accepts a WG input in short form or full name (example: `LSR` or `Link State Routing`).
+- Resolves the WG via IETF Datatracker.
+- Provides the option `Summary of WG` by fetching the charter from Datatracker and summarizing it.
+- Allows registering WG subscriptions for daily summaries.
+- Includes a daily runner that generates a report from subscriptions and sends email.
+
+## Install
+
+```bash
+cd /Users/addogra/ietf-wg-agent
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+```
+
+## CLI app flow
+
+```bash
+ietf-wg-agent
+```
+
+Prompts:
+
+- `User id/email for daily updates`
+- `Working Group Name`
+- Register for daily updates
+- Option `1. Summary of WG`
+
+## Run daily job manually
+
+```bash
+ietf-wg-daily
+```
+
+This writes a report file to `reports/daily-YYYY-MM-DD.txt`.
+It also attempts to send one email per subscribed user.
+
+## Email configuration
+
+Set these environment variables before running `ietf-wg-daily`:
+
+```bash
+export IETF_WG_SMTP_HOST="smtp.example.com"
+export IETF_WG_SMTP_PORT="587"
+export IETF_WG_SMTP_USERNAME="smtp-user"
+export IETF_WG_SMTP_PASSWORD="smtp-password"
+export IETF_WG_FROM_EMAIL="ietf-agent@example.com"
+export IETF_WG_SMTP_STARTTLS="true"   # true/false
+export IETF_WG_SMTP_SSL="false"       # true/false
+export IETF_WG_SMTP_RETRIES="3"       # integer, default 3
+export IETF_WG_SMTP_BACKOFF_SECONDS="1.5" # float, default 1.5
+export IETF_WG_SMTP_JITTER_SECONDS="0.5"  # float, default 0.5
+```
+
+Notes:
+- Subscriber `user_id` values are treated as recipient email addresses.
+- If a subscriber id is not an email format (no `@`), delivery is skipped.
+- If SMTP env vars are missing, report generation still works and email step is skipped with a message.
+- Emails are sent as multipart content (plain text + compact HTML sections per WG).
+- Retry uses exponential backoff plus jitter:
+  `base * 2^(attempt-1) + random(0, jitter_seconds)`.
+
+## Schedule daily on macOS (launchd)
+
+Create `~/Library/LaunchAgents/com.addogra.ietf-wg-daily.plist` with your environment and run:
+
+```bash
+launchctl load ~/Library/LaunchAgents/com.addogra.ietf-wg-daily.plist
+```
+
+(Use `ietf-wg-daily` command inside `ProgramArguments`.)
+
+## MCP server
+
+```bash
+ietf-wg-mcp
+```
+
+Exposed MCP tools:
+
+- `find_working_group(query)`
+- `summary_of_wg(query)`
+- `register_wg_daily_update(user_id, query)`
+- `run_daily_summary_now()`
+- `send_daily_emails_now()`
+
+## Notes
+
+- Network access to `https://datatracker.ietf.org` is required.
+- Subscription data is stored at `~/.ietf_wg_agent_subscriptions.json`.

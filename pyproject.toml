@@ -1,0 +1,38 @@
+# Author: Aditya Dogra
+[project]
+name = "ietf-wg-agent"
+version = "0.1.0"
+description = "MCP/agent for IETF working-group charter summaries and daily updates"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+  "requests>=2.31.0,<3.0.0",
+  "beautifulsoup4>=4.12.3,<5.0.0",
+  "urllib3<2; python_version < '3.10'",
+]
+
+[project.optional-dependencies]
+mcp = [
+  "mcp>=1.0.0; python_version >= '3.10'",
+]
+dev = [
+  "pytest>=7.4.0,<9.0.0",
+]
+full = [
+  "mcp>=1.0.0; python_version >= '3.10'",
+  "pytest>=7.4.0,<9.0.0",
+]
+
+[project.scripts]
+ietf-wg-agent = "ietf_wg_agent.cli:main"
+ietf-wg-mcp = "ietf_wg_agent.server:main"
+ietf-wg-daily = "ietf_wg_agent.daily:main"
+ietf-wg-daily-updates = "ietf_wg_agent.discussion_scheduler:main"
+ietf-wg-daily-updates-scheduler = "ietf_wg_agent.discussion_scheduler:main"
+
+[build-system]
+requires = ["setuptools>=58", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

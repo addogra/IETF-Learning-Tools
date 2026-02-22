@@ -1,0 +1,19 @@
+Author: Aditya Dogra
+
+README.md
+pyproject.toml
+src/ietf_wg_agent/__init__.py
+src/ietf_wg_agent/cli.py
+src/ietf_wg_agent/daily.py
+src/ietf_wg_agent/ietf.py
+src/ietf_wg_agent/notifier.py
+src/ietf_wg_agent/server.py
+src/ietf_wg_agent/subscriptions.py
+src/ietf_wg_agent/summarizer.py
+src/ietf_wg_agent.egg-info/PKG-INFO
+src/ietf_wg_agent.egg-info/SOURCES.txt
+src/ietf_wg_agent.egg-info/dependency_links.txt
+src/ietf_wg_agent.egg-info/entry_points.txt
+src/ietf_wg_agent.egg-info/requires.txt
+src/ietf_wg_agent.egg-info/top_level.txt
+tests/test_summarizer.py
