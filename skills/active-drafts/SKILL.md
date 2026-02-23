@@ -18,6 +18,7 @@ Return top 5 WG drafts from documents page with title, status, URL, and abstract
 4. Fetch draft page and extract abstract/status fallback.
 5. Query doc API fallback for missing title/abstract.
 6. Return top 5 normalized `DraftInfo` records.
+7. Do not prompt for daily update registration in this flow.
 
 ## Outputs
 - Ordered list of top draft records

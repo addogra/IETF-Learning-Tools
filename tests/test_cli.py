@@ -56,7 +56,6 @@ def test_cli_option_2_recent_activity_flow(monkeypatch, capsys):
             "user@example.com",  # email
             "LSR",               # wg input
             "2",                 # option
-            "y",                 # register
         ],
     )
 
@@ -90,7 +89,7 @@ def test_cli_option_2_recent_activity_flow(monkeypatch, capsys):
     assert "draft-ietf-lsr-example-00" in out
     assert "Status: WG Document: Proposed Standard Reviews" in out
     assert "Abstract: This draft defines an example extension." in out
-    assert calls == [("user@example.com", "lsr")]
+    assert calls == []
 
 
 def test_cli_suggestion_selection_flow(monkeypatch, capsys):

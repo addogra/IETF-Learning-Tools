@@ -199,8 +199,8 @@ def main() -> None:
         print("7. Summary of last IETF meeting")
         option = input("Select option: ").strip()
 
-        # Section 4: Optional subscription persistence (skip for WG summary).
-        if user_email and option in {"2", "3", "4", "5", "6", "7"}:
+        # Section 4: Optional subscription persistence (skip for WG summary and active drafts).
+        if user_email and option in {"3", "4", "5", "6", "7"}:
             enroll = input("Register this WG for daily updates? [y/N]: ").strip().lower()
             if enroll == "y":
                 register_daily_update(user_id=user_email, acronym=wg.acronym)

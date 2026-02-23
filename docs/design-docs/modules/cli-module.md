@@ -17,7 +17,7 @@ Provide interactive user flow for WG operations.
    - 5: Daily updates summary (last 1 day) + optional scheduler start
    - 6: Upcoming IETF agenda summary (next meeting)
    - 7: Last IETF meeting summary (WG minutes)
-5. If option is 2-7 and email provided, optionally register daily updates.
+5. If option is 3-7 and email provided, optionally register daily updates.
 6. Print formatted result.
 
 ## Error Handling
