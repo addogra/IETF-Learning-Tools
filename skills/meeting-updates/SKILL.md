@@ -14,6 +14,7 @@ Fetch updates from the last 2 IETF WG meetings, including agenda and minutes lin
 2. Identify links relevant to agenda/minutes.
 3. Group links by meeting label (IETF number/date heuristic).
 4. Return last 2 meetings with agenda/minutes URLs.
+5. Do not prompt for daily update registration in this flow.
 
 ## Outputs
 - Ordered list of meeting updates with:

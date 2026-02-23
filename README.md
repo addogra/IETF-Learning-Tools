@@ -117,7 +117,7 @@ Prompts:
 
 - `Email for daily updates`
 - `Working Group Name`
-- Register for daily updates (shown only for options 3-7)
+- Register for daily updates (shown only for option 5)
 - Option `1. Summary of WG`
 - Option `2. Active drafts` (top 5 drafts from WG documents + abstract)
 - Option `3. Draft discussions in a WG` (summary of last 3 months from mailarchive)

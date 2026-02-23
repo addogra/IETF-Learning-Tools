@@ -15,6 +15,7 @@ Find the next IETF meeting and summarize available WG agendas.
 3. Traverse WG meetings pages and collect agenda links for the target meeting.
 4. Fetch agenda pages and summarize agenda content.
 5. Skip WGs with no published agenda.
+6. Do not prompt for daily update registration in this flow.
 
 ## Outputs
 - Header: `IETF <Number> - Dates - Place`

@@ -15,6 +15,7 @@ Summarize draft discussions from WG mailarchive over the last 3 months.
 3. Filter posts by 3-month cutoff.
 4. Follow older-page links with bounded pagination.
 5. Summarize topics/authors and list recent threads.
+6. Do not prompt for daily update registration in this flow.
 
 ## Outputs
 - Discussion summary including totals, topics, active authors, and thread links

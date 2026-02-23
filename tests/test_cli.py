@@ -129,7 +129,6 @@ def test_cli_option_3_discussions_flow(monkeypatch, capsys):
             "user@example.com",  # email
             "LSR",               # wg input
             "3",                 # option
-            "n",                 # skip register
         ],
     )
 
@@ -148,12 +147,20 @@ def test_cli_option_3_discussions_flow(monkeypatch, capsys):
         ],
     )
 
+    calls = []
+
+    def _fake_register(user_id: str, acronym: str):
+        calls.append((user_id, acronym))
+
+    monkeypatch.setattr(cli, "register_daily_update", _fake_register)
+
     cli.main()
     out = capsys.readouterr().out
 
     assert "Draft discussions summary (last 3 months):" in out
     assert "Total discussion posts: 1" in out
     assert "Thread A" in out
+    assert calls == []
 
 
 def test_cli_option_4_meeting_updates_flow(monkeypatch, capsys):
@@ -165,7 +172,6 @@ def test_cli_option_4_meeting_updates_flow(monkeypatch, capsys):
             "user@example.com",  # email
             "LSR",               # wg input
             "4",                 # option
-            "n",                 # skip register
         ],
     )
 
@@ -183,12 +189,20 @@ def test_cli_option_4_meeting_updates_flow(monkeypatch, capsys):
         ],
     )
 
+    calls = []
+
+    def _fake_register(user_id: str, acronym: str):
+        calls.append((user_id, acronym))
+
+    monkeypatch.setattr(cli, "register_daily_update", _fake_register)
+
     cli.main()
     out = capsys.readouterr().out
     assert "Updates from last 2 IETF meetings:" in out
     assert "IETF 122" in out
     assert "agenda-wg-lsr" in out
     assert "minutes-wg-lsr" in out
+    assert calls == []
 
 
 def test_cli_option_5_daily_updates_flow(monkeypatch, capsys):
@@ -245,7 +259,6 @@ def test_cli_option_6_upcoming_agenda_flow(monkeypatch, capsys):
             "user@example.com",  # email
             "LSR",               # wg input
             "6",                 # option
-            "n",                 # skip register
         ],
     )
 
@@ -267,11 +280,19 @@ def test_cli_option_6_upcoming_agenda_flow(monkeypatch, capsys):
         ),
     )
 
+    calls = []
+
+    def _fake_register(user_id: str, acronym: str):
+        calls.append((user_id, acronym))
+
+    monkeypatch.setattr(cli, "register_daily_update", _fake_register)
+
     cli.main()
     out = capsys.readouterr().out
     assert "IETF 122 - March 15, 2027 - March 21, 2027 - Yokohama, Japan" in out
     assert "Working Group Link State Routing (LSR)" in out
     assert "Review milestones and draft status updates." in out
+    assert calls == []
 
 
 def test_cli_option_7_last_meeting_summary_flow(monkeypatch, capsys):
@@ -287,7 +308,6 @@ def test_cli_option_7_last_meeting_summary_flow(monkeypatch, capsys):
             "user@example.com",  # email
             "LSR",               # wg input
             "7",                 # option
-            "n",                 # skip register
         ],
     )
 
@@ -310,8 +330,16 @@ def test_cli_option_7_last_meeting_summary_flow(monkeypatch, capsys):
         ),
     )
 
+    calls = []
+
+    def _fake_register(user_id: str, acronym: str):
+        calls.append((user_id, acronym))
+
+    monkeypatch.setattr(cli, "register_daily_update", _fake_register)
+
     cli.main()
     out = capsys.readouterr().out
     assert "IETF 121 - March 15, 2024 - March 21, 2024 - Brisbane, Australia" in out
     assert "Working Group Link State Routing (LSR)" in out
     assert "Reviewed milestones and progressed two drafts." in out
+    assert calls == []

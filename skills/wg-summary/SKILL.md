@@ -13,7 +13,7 @@ Fetch and summarize the WG charter for quick user understanding.
 1. Fetch WG about page.
 2. Locate charter heading and section text.
 3. Build lightweight bullet summary with key topics.
-4. Do not prompt for daily update registration in the summary flow.
+4. Do not prompt for daily update registration in this flow.
 
 ## Outputs
 - Structured charter summary text

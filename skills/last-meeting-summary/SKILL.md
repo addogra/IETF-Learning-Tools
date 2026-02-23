@@ -16,6 +16,7 @@ Summarize WG meeting minutes for the last completed IETF meeting.
 3. Collect agenda/minutes links.
 4. Include only WGs with published minutes.
 5. Summarize minutes text for each included WG.
+6. Do not prompt for daily update registration in this flow.
 
 ## Outputs
 - Header: `IETF <Number> - Dates - Place`
