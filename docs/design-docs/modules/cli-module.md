@@ -9,8 +9,7 @@ Provide interactive user flow for WG operations.
 1. Validate user email input.
 2. Resolve WG from user input.
 3. If no match, run suggestion flow and let user disambiguate.
-4. Optionally register daily updates.
-5. Dispatch menu option:
+4. Dispatch menu option:
    - 1: Charter summary
    - 2: Active drafts (top 5 + status + abstract)
    - 3: Draft discussions summary (last 3 months)
@@ -18,6 +17,7 @@ Provide interactive user flow for WG operations.
    - 5: Daily updates summary (last 1 day) + optional scheduler start
    - 6: Upcoming IETF agenda summary (next meeting)
    - 7: Last IETF meeting summary (WG minutes)
+5. If option is 2-7 and email provided, optionally register daily updates.
 6. Print formatted result.
 
 ## Error Handling

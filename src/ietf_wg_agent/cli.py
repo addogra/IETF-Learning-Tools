@@ -188,14 +188,7 @@ def main() -> None:
 
         print(f"Matched WG: {wg.acronym.upper()} - {wg.name}")
 
-        # Section 3: Optional subscription persistence.
-        if user_email:
-            enroll = input("Register this WG for daily updates? [y/N]: ").strip().lower()
-            if enroll == "y":
-                register_daily_update(user_id=user_email, acronym=wg.acronym)
-                print("Daily update registration saved.")
-
-        # Section 4: Feature dispatch.
+        # Section 3: Feature dispatch.
         print("\nOptions:")
         print("1. Summary of WG")
         print("2. Active drafts")
@@ -205,6 +198,13 @@ def main() -> None:
         print("6. Agenda of upcoming IETF meeting")
         print("7. Summary of last IETF meeting")
         option = input("Select option: ").strip()
+
+        # Section 4: Optional subscription persistence (skip for WG summary).
+        if user_email and option in {"2", "3", "4", "5", "6", "7"}:
+            enroll = input("Register this WG for daily updates? [y/N]: ").strip().lower()
+            if enroll == "y":
+                register_daily_update(user_id=user_email, acronym=wg.acronym)
+                print("Daily update registration saved.")
 
         if option == "1":
             charter = fetch_charter_text(wg.acronym)

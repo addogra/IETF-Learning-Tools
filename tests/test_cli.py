@@ -23,7 +23,6 @@ def test_cli_option_1_summary_flow(monkeypatch, capsys):
         [
             "user@example.com",  # email
             "LSR",               # wg input
-            "y",                 # register
             "1",                 # option
         ],
     )
@@ -45,7 +44,7 @@ def test_cli_option_1_summary_flow(monkeypatch, capsys):
 
     assert "Matched WG: LSR - Link State Routing" in out
     assert "summary output" in out
-    assert calls == [("user@example.com", "lsr")]
+    assert calls == []
 
 
 def test_cli_option_2_recent_activity_flow(monkeypatch, capsys):
@@ -56,8 +55,8 @@ def test_cli_option_2_recent_activity_flow(monkeypatch, capsys):
         [
             "user@example.com",  # email
             "LSR",               # wg input
-            "n",                 # skip register
             "2",                 # option
+            "y",                 # register
         ],
     )
 
@@ -77,6 +76,13 @@ def test_cli_option_2_recent_activity_flow(monkeypatch, capsys):
         ],
     )
 
+    calls = []
+
+    def _fake_register(user_id: str, acronym: str):
+        calls.append((user_id, acronym))
+
+    monkeypatch.setattr(cli, "register_daily_update", _fake_register)
+
     cli.main()
     out = capsys.readouterr().out
 
@@ -84,6 +90,7 @@ def test_cli_option_2_recent_activity_flow(monkeypatch, capsys):
     assert "draft-ietf-lsr-example-00" in out
     assert "Status: WG Document: Proposed Standard Reviews" in out
     assert "Abstract: This draft defines an example extension." in out
+    assert calls == [("user@example.com", "lsr")]
 
 
 def test_cli_suggestion_selection_flow(monkeypatch, capsys):
@@ -95,7 +102,6 @@ def test_cli_suggestion_selection_flow(monkeypatch, capsys):
             "user@example.com",  # email
             "LSRV",              # wrong wg input
             "1",                 # select suggested wg
-            "n",                 # skip register
             "1",                 # option
         ],
     )
@@ -123,8 +129,8 @@ def test_cli_option_3_discussions_flow(monkeypatch, capsys):
         [
             "user@example.com",  # email
             "LSR",               # wg input
-            "n",                 # skip register
             "3",                 # option
+            "n",                 # skip register
         ],
     )
 
@@ -159,8 +165,8 @@ def test_cli_option_4_meeting_updates_flow(monkeypatch, capsys):
         [
             "user@example.com",  # email
             "LSR",               # wg input
-            "n",                 # skip register
             "4",                 # option
+            "n",                 # skip register
         ],
     )
 
@@ -194,8 +200,8 @@ def test_cli_option_5_daily_updates_flow(monkeypatch, capsys):
         [
             "user@example.com",  # email
             "LSR",               # wg input
-            "n",                 # skip register
             "5",                 # option
+            "n",                 # skip register
             "y",                 # start scheduler
         ],
     )
@@ -239,8 +245,8 @@ def test_cli_option_6_upcoming_agenda_flow(monkeypatch, capsys):
         [
             "user@example.com",  # email
             "LSR",               # wg input
-            "n",                 # skip register
             "6",                 # option
+            "n",                 # skip register
         ],
     )
 
@@ -281,8 +287,8 @@ def test_cli_option_7_last_meeting_summary_flow(monkeypatch, capsys):
         [
             "user@example.com",  # email
             "LSR",               # wg input
-            "n",                 # skip register
             "7",                 # option
+            "n",                 # skip register
         ],
     )
 

@@ -14,6 +14,7 @@ Expose all core workflows as MCP tools with behavior parity to CLI.
 2. Register tool handlers with shared WG resolution logic.
 3. Use same suggestion fallback as CLI for unresolved WGs.
 4. Return plain text payloads for clients.
+5. Keep registration as an explicit tool call (not part of summary responses).
 
 ## Outputs
 - Registered MCP toolset and text responses
