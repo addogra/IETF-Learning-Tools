@@ -1,4 +1,3 @@
-# Author: Aditya Dogra
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RootDir = Resolve-Path (Join-Path $ScriptDir "..")

@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 Nixpacks note:
 - Ensure python runtime and pip are available.

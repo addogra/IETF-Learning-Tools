@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # MCP Server Module (`src/ietf_wg_agent/server.py`)
 

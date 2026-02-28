@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 Date: 2026-02-28
 Document: Requirements.txt
 Purpose: Canonical implementation requirements for the IETF WG assistant.

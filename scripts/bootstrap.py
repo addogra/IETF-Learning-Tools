@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# Author: Aditya Dogra
 from __future__ import annotations
 
 import argparse

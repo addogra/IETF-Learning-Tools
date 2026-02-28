@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # Daily Module (`src/ietf_wg_agent/daily.py`)
 

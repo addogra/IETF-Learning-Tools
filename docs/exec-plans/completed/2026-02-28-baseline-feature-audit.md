@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 Date: 2026-02-28
 Status: Completed
 Plan: Baseline Feature Audit Against Requirements

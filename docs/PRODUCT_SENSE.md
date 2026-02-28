@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # PRODUCT SENSE
 

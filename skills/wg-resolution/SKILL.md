@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # Skill: wg-resolution
 

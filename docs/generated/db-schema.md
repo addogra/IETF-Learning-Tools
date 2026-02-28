@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # Subscription DB Schema (Generated-style reference)
 

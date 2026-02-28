@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # Tech Debt Tracker
 

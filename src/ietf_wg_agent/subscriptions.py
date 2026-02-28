@@ -1,4 +1,3 @@
-# Author: Aditya Dogra
 from __future__ import annotations
 
 """Local JSON subscription storage.

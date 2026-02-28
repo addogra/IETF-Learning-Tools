@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # Design Docs Index
 

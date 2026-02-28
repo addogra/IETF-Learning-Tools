@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # New Engineer Quickstart Flow
 

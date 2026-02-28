@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # QUALITY SCORE
 

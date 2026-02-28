@@ -1,4 +1,3 @@
-# Author: Aditya Dogra
 from pathlib import Path
 import re
 

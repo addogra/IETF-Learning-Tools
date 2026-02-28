@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # Subscriptions Module (`src/ietf_wg_agent/subscriptions.py`)
 

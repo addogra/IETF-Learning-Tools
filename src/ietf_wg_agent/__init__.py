@@ -1,4 +1,3 @@
-# Author: Aditya Dogra
 """IETF WG agent package."""
 
 from __future__ import annotations

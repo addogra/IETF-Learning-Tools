@@ -1,4 +1,3 @@
-# Author: Aditya Dogra
 [project]
 name = "ietf-wg-agent"
 version = "0.1.0"

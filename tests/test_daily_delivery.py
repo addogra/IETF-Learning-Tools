@@ -1,4 +1,3 @@
-# Author: Aditya Dogra
 from types import SimpleNamespace
 
 from ietf_wg_agent import daily

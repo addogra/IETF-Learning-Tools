@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # Completed Execution Plans
 

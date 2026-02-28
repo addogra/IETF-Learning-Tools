@@ -1,4 +1,3 @@
-# Author: Aditya Dogra
 from ietf_wg_agent import cli
 from ietf_wg_agent.ietf import (
     DiscussionPost,

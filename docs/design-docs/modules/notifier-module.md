@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # Notifier Module (`src/ietf_wg_agent/notifier.py`)
 

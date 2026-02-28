@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # IETF Data Module (`src/ietf_wg_agent/ietf.py`)
 

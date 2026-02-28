@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # CLI Module (`src/ietf_wg_agent/cli.py`)
 

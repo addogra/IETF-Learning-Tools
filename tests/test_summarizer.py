@@ -1,4 +1,3 @@
-# Author: Aditya Dogra
 from ietf_wg_agent.summarizer import summarize_charter
 
 

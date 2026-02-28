@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # Meeting Updates Spec
 

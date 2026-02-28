@@ -1,4 +1,3 @@
-# Author: Aditya Dogra
 import pytest
 import json
 

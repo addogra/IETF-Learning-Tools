@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 Design references for agents:
 - Keep CLI output human-readable and compact.

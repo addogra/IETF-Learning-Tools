@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # Last Meeting Summary Spec
 

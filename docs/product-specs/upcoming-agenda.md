@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # Upcoming IETF Agenda Spec
 

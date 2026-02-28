@@ -1,4 +1,3 @@
-# Author: Aditya Dogra
 .PHONY: setup setup-base setup-mcp run daily daily-updates mcp test
 
 setup:

@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # New User Onboarding Spec
 

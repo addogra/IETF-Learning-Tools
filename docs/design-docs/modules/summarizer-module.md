@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # Summarizer Module (`src/ietf_wg_agent/summarizer.py`)
 

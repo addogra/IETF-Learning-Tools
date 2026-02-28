@@ -1,4 +1,3 @@
-# Author: Aditya Dogra
 import importlib
 import sys
 import types

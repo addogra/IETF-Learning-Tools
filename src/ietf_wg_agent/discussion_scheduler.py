@@ -1,4 +1,3 @@
-# Author: Aditya Dogra
 from __future__ import annotations
 
 """Daily discussion-update scheduler.

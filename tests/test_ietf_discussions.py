@@ -1,4 +1,3 @@
-# Author: Aditya Dogra
 import json
 
 from ietf_wg_agent import ietf

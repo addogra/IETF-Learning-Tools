@@ -1,4 +1,3 @@
-Author: Aditya Dogra
 
 # WG Summary and Drafts Spec
 

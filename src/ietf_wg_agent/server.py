@@ -1,4 +1,3 @@
-# Author: Aditya Dogra
 from __future__ import annotations
 
 """MCP server surface for the agent.

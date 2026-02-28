@@ -1,4 +1,3 @@
-REM Author: Aditya Dogra
 @echo off
 setlocal
 cd /d %~dp0\..
