@@ -1,0 +1,311 @@
+Author: Aditya Dogra
+Date: 2026-02-28
+Document: Requirements.txt
+Purpose: Canonical implementation requirements for the IETF WG assistant.
+
+1. Product Goal
+- Build an IETF assistant that can run in all delivery modes:
+  - MCP server
+  - Local/CLI agent
+  - Webex bot
+  - Daily scheduled runner
+- Primary outcome: help users discover relevant IETF Working Groups (WGs) and summarize WG activity.
+
+2. User Types And Inputs
+- User Type A (new engineer, no IETF knowledge):
+  - Primary input: technology area of interest (example: "OSPF security", "BGP TLS", "BGP-LS extensions").
+- User Type B (experienced engineer, knows WGs):
+  - Primary input: WG name (short or full; example: "LSR", "Link State Routing").
+
+REQ-INPUT-001
+- System MUST support both user types in the same interaction model.
+
+REQ-INPUT-002
+- System MUST ask iterative follow-up options after each action and MUST always offer "Quit".
+
+REQ-INPUT-003
+- System MUST NOT require email unless user explicitly enables daily updates.
+
+3. Maintainer Prerequisite: WG Charter Knowledge Base
+Scope: Maintainer-only operations.
+
+REQ-MAINT-001
+- Crawl https://datatracker.ietf.org/wg/ and enumerate active WG entries.
+
+REQ-MAINT-002
+- For each WG, fetch WG About page:
+  - URL pattern: https://datatracker.ietf.org/wg/<wg>/about/
+
+REQ-MAINT-003
+- Extract complete "Charter for Working Group" text from each WG About page.
+
+REQ-MAINT-004
+- Build vector database from WG charter corpus to support fast technology-to-WG matching.
+
+REQ-MAINT-005
+- Provide explicit rebuild option for maintainers: "rebuild database".
+  - Rebuild MUST delete previous DB copy before creating a new DB.
+  - Rebuild MUST be idempotent and safe to rerun.
+
+REQ-MAINT-006
+- Document vector DB API and usage clearly (see Section 9).
+
+
+REQ-MAINT-007
+- Build a "Garbage collection" mechanism for the maintainers : maintainers can run that as an option "Garbage Collector" that run to find inconsistencies in documentation or violations of architectural constraints, fighting entropy and decay
+
+
+4. Mandatory Engineering Conditions
+
+REQ-ENG-001
+- In-repository knowledge layout MUST exist and be maintained with this structure:
+
+
+AGENTS.md
+ARCHITECTURE.md
+docs/
+├── design-docs/
+│   ├── index.md
+│   ├── core-beliefs.md
+│   └── ...
+├── exec-plans/
+│   ├── active/
+│   ├── completed/
+│   └── tech-debt-tracker.md
+├── generated/
+│   └── db-schema.md
+├── product-specs/
+│   ├── index.md
+│   ├── new-user-onboarding.md
+│   └── ...
+├── references/
+│   ├── design-system-reference-llms.txt
+│   ├── nixpacks-llms.txt
+│   ├── uv-llms.txt
+│   └── ...
+├── DESIGN.md
+├── FRONTEND.md
+├── PLANS.md
+├── PRODUCT_SENSE.md
+├── QUALITY_SCORE.md
+├── RELIABILITY.md
+└── SECURITY.md
+
+
+REQ-ENG-001
+- At every development stage, update execution plans:
+  - what is active
+  - what is completed
+  - what moved to tech debt
+
+REQ-ENG-003
+- Maintain extensive design and architecture documentation for all major features
+
+REQ-ENG-004
+- Every new feature MUST be implemented and tested across all delivery modes:
+  - MCP
+  - Agent/CLI
+  - Skills layer
+  - Webex bot
+
+
+5. Core User Features
+
+REQ-FEAT-001: New-user technology onboarding
+- Prompt: "What technology area are you interested in?"
+- Match technology input against charter vector DB.
+- Use multi-pattern matching with context:
+  - Example: "OSPF security" => match WGs covering both OSPF and security context.
+  - Example: "BGP TLS" => match WGs covering both BGP and TLS.
+  - Example: "BGP-LS extensions" => match WGs covering BGP-LS + extension context.
+
+REQ-FEAT-002: WG name resolution
+- Prompt experienced users for WG name.
+- Accept both short and full forms and resolve to canonical WG:
+  - Example: "LSR" <-> "Link State Routing"
+
+REQ-FEAT-003: "Summary of WG"
+- Fetch WG charter and return complete charter text.
+- Charter output MUST NOT be truncated.
+
+REQ-FEAT-004: "Active drafts"
+- Source: https://datatracker.ietf.org/wg/<wg>/documents/
+- Return top 5 latest drafts.
+- For each draft include at minimum:
+  - draft identifier/title
+  - abstract
+  - status (if available)
+
+REQ-FEAT-005: "Draft discussions in a WG"
+- Source: https://mailarchive.ietf.org/arch/browse/<wg>/
+- Summarize last 3 months of discussions.
+
+REQ-FEAT-006: "Updates from last 2 IETF meetings"
+- Source: https://datatracker.ietf.org/wg/<wg>/meetings/
+- Return updates for last 2 WG meetings including:
+  - agenda summary
+  - minutes summary
+
+REQ-FEAT-007: "Daily updates"
+- Source: https://mailarchive.ietf.org/arch/browse/<wg>/
+- Summarize last day activity.
+- Schedule daily delivery ONLY when there is new discussion activity.
+- If no updates for the day, MUST NOT send an email/update payload.
+
+REQ-FEAT-008: "Agenda of upcoming IETF meeting"
+- Discover next IETF meeting metadata first (number, dates, place).
+- Traverse WGs and include only those with published agenda.
+- If agenda is not yet published for a WG (common until ~5 days before meeting), skip that WG.
+- Output format:
+  - IETF <number> - <dates> - <place>
+  - Working Group <name> - summarized agenda
+
+REQ-FEAT-009: "Summary of last IETF meeting"
+- Discover last completed IETF meeting metadata first (number, dates, place).
+- Traverse WGs and summarize meeting minutes for that meeting.
+- Exclude WGs that did not meet in that IETF.
+- Output format:
+  - IETF <number> - <dates> - <place>
+  - Working Group <name> - summarized meeting minutes
+
+REQ-FEAT-010: "Draft Tracker"
+- Input: RFC or draft identifier.
+- Output:
+  - draft/RFC history timeline
+  - related WG/mailarchive context
+- Optional extension:
+  - vendor implementation signals (if available from reliable public sources).
+
+
+
+
+6. Conversation And UX Contract
+
+REQ-UX-001
+- After any feature response, system MUST present next valid options and quit path.
+
+REQ-UX-002
+- If user intent is ambiguous, system MUST clarify with minimal prompts.
+
+REQ-UX-003
+- For unresolved WG/technology, system MUST provide ranked suggestions and ask user to pick.
+
+
+7. Data Sources And URL Templates
+- WG index: https://datatracker.ietf.org/wg/
+- WG about: https://datatracker.ietf.org/wg/<wg>/about/
+- WG documents: https://datatracker.ietf.org/wg/<wg>/documents/
+- WG meetings: https://datatracker.ietf.org/wg/<wg>/meetings/
+- WG mail archive: https://mailarchive.ietf.org/arch/browse/<wg>/
+
+REQ-DATA-001
+- Parsers MUST be deterministic with graceful fallback for HTML/API shape changes.
+
+REQ-DATA-002
+- Prefer official API sources when available; fallback to robust HTML parsing.
+
+
+
+8. Vector Matching Requirements
+REQ-VDB-001
+- Matching pipeline MUST combine:
+  - semantic retrieval over charter embeddings
+  - keyword/token constraints for multi-term intent
+  - optional reranking for precision
+
+REQ-VDB-002
+- For compound phrases, default matching behavior MUST enforce AND-semantics across key entities.
+
+REQ-VDB-003
+- Return top-K candidate WGs with score and concise justification.
+
+
+
+
+9. Required Internal API Contract (Implementation-Level)
+These API names are normative contracts for the implementation surface (language-specific wrappers allowed).
+
+REQ-API-001: Database lifecycle
+- rebuild_wg_charter_db(force_delete_old: bool = True) -> RebuildResult
+- get_db_metadata() -> DbMetadata
+
+REQ-API-002: WG resolution and matching
+- resolve_wg_name(user_input: str) -> WgResolutionResult
+- suggest_wgs_by_technology(query: str, top_k: int = 10, require_all_terms: bool = True) -> List[WgMatch]
+
+REQ-API-003: WG content
+- get_wg_charter(wg_id: str) -> CharterResult
+- get_wg_active_drafts(wg_id: str, limit: int = 5) -> List[DraftResult]
+- get_wg_discussion_summary(wg_id: str, window_days: int = 90) -> DiscussionSummary
+- get_wg_last_two_meeting_updates(wg_id: str) -> MeetingUpdates
+
+REQ-API-004: IETF-wide meeting views
+- get_upcoming_ietf_agenda_summary() -> UpcomingMeetingSummary
+- get_last_ietf_meeting_summary() -> LastMeetingSummary
+
+REQ-API-005: Draft tracking
+- track_draft_or_rfc(identifier: str, include_vendor_signals: bool = False) -> DraftTrackerResult
+
+REQ-API-006: Daily scheduler
+- run_daily_wg_update(wg_id: str, notify: bool = True) -> DailyUpdateResult
+- schedule_daily_updates(subscription: SubscriptionConfig) -> SchedulerResult
+
+
+
+10. Delivery Mode Parity
+REQ-MODE-001
+- Every core feature (REQ-FEAT-001..010) MUST be exposed in:
+  - CLI
+  - MCP tools
+  - Webex bot command/interaction flow
+  - Skills docs and workflow references
+
+REQ-MODE-002
+- Behavior and outputs MUST be semantically consistent across all modes.
+
+
+
+11. Reliability And Safety
+REQ-REL-001
+- Network/parser failures MUST return actionable error messages and fallback behavior (never silent fail).
+
+REQ-REL-002
+- Scheduler and notifications MUST be retry-safe and avoid duplicate sends.
+
+REQ-REL-003
+- If no new daily content exists, MUST skip outbound update.
+
+
+
+12. Testing And Documentation Gates
+REQ-TEST-001
+- Any behavioral change MUST include:
+  - at least one CLI-path test
+  - at least one parser/unit test
+
+REQ-TEST-002
+- Before finalization, run:
+  - python -m pytest -q tests
+
+REQ-DOC-001
+- Update docs under `docs/` whenever behavior, interface, or data source handling changes.
+
+REQ-DOC-002
+- Maintain current state in:
+  - docs/exec-plans/active/
+  - docs/exec-plans/completed/
+  - docs/exec-plans/tech-debt-tracker.md
+
+
+13. Acceptance Criteria (High-Level)
+- AC-1: New engineer enters technology phrase and gets ranked relevant WGs with rationale.
+- AC-2: Experienced user enters short/full WG name and gets canonical WG resolution.
+- AC-3: User can retrieve full charter, latest 5 drafts with abstracts, last 3 months discussion summary.
+- AC-4: User can retrieve last 2 WG meeting updates (agenda + minutes summary).
+- AC-5: Daily update only sends when new mailarchive activity exists.
+- AC-6: Upcoming and last IETF meeting summaries include meeting metadata + WG-level summaries.
+- AC-7: Draft tracker returns timeline/history and related discussion context.
+- AC-8: Maintainer can rebuild charter vector DB; previous DB is removed first.
+- AC-9: All features work across CLI, MCP, Webex bot, and skills definitions.
+
+End of Requirements.
