@@ -1,13 +1,5 @@
 from ietf_wg_agent import cli
-from ietf_wg_agent.ietf import (
-    DiscussionPost,
-    DraftInfo,
-    LastMeetingItem,
-    MeetingUpdate,
-    UpcomingAgendaItem,
-    WgMatch,
-    WorkingGroup,
-)
+from ietf_wg_agent.ietf import DraftResult, WgMatch, WgResolutionResult, WorkingGroup
 
 
 def _feed_inputs(monkeypatch, values):
@@ -15,370 +7,184 @@ def _feed_inputs(monkeypatch, values):
     monkeypatch.setattr("builtins.input", lambda _prompt="": next(it))
 
 
-def test_cli_option_1_summary_flow(monkeypatch, capsys):
-    wg = WorkingGroup(acronym="lsr", name="Link State Routing")
-
+def test_cli_new_engineer_technology_onboarding_summary(monkeypatch, capsys):
     _feed_inputs(
         monkeypatch,
         [
-            "user@example.com",  # email
-            "LSR",               # wg input
-            "1",                 # option
+            "1",                    # user type: new engineer
+            "OSPF security",        # technology query
+            "1",                    # select first WG match
+            "1",                    # option: summary of WG
         ],
     )
 
-    monkeypatch.setattr(cli, "fetch_working_groups", lambda: [wg])
-    monkeypatch.setattr(cli, "resolve_working_group", lambda _q, _groups: wg)
-    monkeypatch.setattr(cli, "fetch_charter_text", lambda _ac: "charter text")
-    monkeypatch.setattr(cli, "summarize_charter", lambda _txt: "summary output")
+    monkeypatch.setattr(
+        cli,
+        "suggest_wgs_by_technology",
+        lambda query, top_k=10, require_all_terms=True: [
+            WgMatch(
+                acronym="LSR",
+                name="Link State Routing",
+                score=0.91,
+                justification="Matched terms: ospf, security",
+            )
+        ],
+    )
+    monkeypatch.setattr(
+        cli,
+        "get_wg_charter",
+        lambda _wg_id: type(
+            "_Charter",
+            (),
+            {
+                "wg_id": "lsr",
+                "wg_name": "Link State Routing",
+                "charter_text": "Complete charter text without truncation.",
+            },
+        )(),
+    )
 
-    calls = []
+    cli.main()
+    out = capsys.readouterr().out
 
-    def _fake_register(user_id: str, acronym: str):
-        calls.append((user_id, acronym))
+    assert "Technology onboarding results for 'OSPF security':" in out
+    assert "1. LSR - Link State Routing (score=0.9100)" in out
+    assert "Complete charter for Link State Routing (LSR):" in out
+    assert "Complete charter text without truncation." in out
 
-    monkeypatch.setattr(cli, "register_daily_update", _fake_register)
+
+def test_cli_experienced_engineer_wg_resolution_summary(monkeypatch, capsys):
+    _feed_inputs(
+        monkeypatch,
+        [
+            "2",            # user type: experienced engineer
+            "LSR",          # WG input
+            "1",            # option: summary
+        ],
+    )
+
+    monkeypatch.setattr(
+        cli,
+        "resolve_wg_name",
+        lambda _query: WgResolutionResult(
+            query="LSR",
+            matched=WorkingGroup(acronym="lsr", name="Link State Routing"),
+            suggestions=[],
+        ),
+    )
+    monkeypatch.setattr(
+        cli,
+        "get_wg_charter",
+        lambda _wg_id: type(
+            "_Charter",
+            (),
+            {
+                "wg_id": "lsr",
+                "wg_name": "Link State Routing",
+                "charter_text": "Full charter payload.",
+            },
+        )(),
+    )
 
     cli.main()
     out = capsys.readouterr().out
 
     assert "Matched WG: LSR - Link State Routing" in out
-    assert "summary output" in out
-    assert calls == []
+    assert "Summary of WG" in out
+    assert "Full charter payload." in out
 
 
-def test_cli_option_2_recent_activity_flow(monkeypatch, capsys):
-    wg = WorkingGroup(acronym="lsr", name="Link State Routing")
-
+def test_cli_experienced_engineer_suggestion_selection(monkeypatch, capsys):
     _feed_inputs(
         monkeypatch,
         [
-            "user@example.com",  # email
-            "LSR",               # wg input
-            "2",                 # option
+            "2",            # user type: experienced engineer
+            "LSRV",         # WG input
+            "1",            # select first suggestion
+            "1",            # option: summary
         ],
     )
 
-    monkeypatch.setattr(cli, "fetch_working_groups", lambda: [wg])
-    monkeypatch.setattr(cli, "resolve_working_group", lambda _q, _groups: wg)
+    suggestion = WorkingGroup(acronym="lsvr", name="Link State Vector Routing")
     monkeypatch.setattr(
         cli,
-        "fetch_top_active_drafts",
-        lambda _ac, limit=5: [
-            DraftInfo(
-                name="draft-ietf-lsr-example-00",
-                title="Example Draft Title",
-                status="WG Document: Proposed Standard Reviews",
-                abstract="This draft defines an example extension.",
-                url="https://datatracker.ietf.org/doc/draft-ietf-lsr-example-00/",
-            )
-        ],
+        "resolve_wg_name",
+        lambda _query: WgResolutionResult(
+            query="LSRV",
+            matched=None,
+            suggestions=[suggestion],
+        ),
     )
-
-    calls = []
-
-    def _fake_register(user_id: str, acronym: str):
-        calls.append((user_id, acronym))
-
-    monkeypatch.setattr(cli, "register_daily_update", _fake_register)
+    monkeypatch.setattr(
+        cli,
+        "get_wg_charter",
+        lambda _wg_id: type(
+            "_Charter",
+            (),
+            {
+                "wg_id": "lsvr",
+                "wg_name": "Link State Vector Routing",
+                "charter_text": "Complete charter text.",
+            },
+        )(),
+    )
 
     cli.main()
     out = capsys.readouterr().out
 
-    assert "Top 5 active drafts from WG documents" in out
-    assert "draft-ietf-lsr-example-00" in out
-    assert "Status: WG Document: Proposed Standard Reviews" in out
-    assert "Abstract: This draft defines an example extension." in out
-    assert calls == []
-
-
-def test_cli_suggestion_selection_flow(monkeypatch, capsys):
-    selected = WorkingGroup(acronym="lsvr", name="Link State Vector Routing")
-
-    _feed_inputs(
-        monkeypatch,
-        [
-            "user@example.com",  # email
-            "LSRV",              # wrong wg input
-            "1",                 # select suggested wg
-            "1",                 # option
-        ],
-    )
-
-    monkeypatch.setattr(cli, "fetch_working_groups", lambda: [selected])
-    monkeypatch.setattr(cli, "resolve_working_group", lambda _q, _groups: None)
-    monkeypatch.setattr(cli, "suggest_working_groups", lambda _q, _groups, limit=5: [selected])
-    monkeypatch.setattr(cli, "fetch_charter_text", lambda _ac: "charter text")
-    monkeypatch.setattr(cli, "summarize_charter", lambda _txt: "summary output")
-
-    cli.main()
-    out = capsys.readouterr().out
-
-    assert "Did you mean" in out
+    assert "No exact WG found for 'LSRV'. Did you mean:" in out
     assert "1. LSVR - Link State Vector Routing" in out
-    assert "Selected WG: LSVR - Link State Vector Routing" in out
-    assert "summary output" in out
+    assert "Matched WG: LSVR - Link State Vector Routing" in out
 
 
-def test_cli_option_3_discussions_flow(monkeypatch, capsys):
-    wg = WorkingGroup(acronym="lsr", name="Link State Routing")
-
+def test_cli_active_drafts_returns_all(monkeypatch, capsys):
     _feed_inputs(
         monkeypatch,
         [
-            "user@example.com",  # email
-            "LSR",               # wg input
-            "3",                 # option
+            "2",          # user type
+            "LSR",        # WG input
+            "2",          # option: active drafts
         ],
     )
 
-    monkeypatch.setattr(cli, "fetch_working_groups", lambda: [wg])
-    monkeypatch.setattr(cli, "resolve_working_group", lambda _q, _groups: wg)
     monkeypatch.setattr(
         cli,
-        "fetch_wg_discussions_last_months",
-        lambda _ac, months=3: [
-            DiscussionPost(
-                date="2099-01-10",
-                subject="Thread A",
-                author="Alice",
-                url="https://mailarchive.ietf.org/arch/msg/lsr/abc123/",
-            )
-        ],
-    )
-
-    calls = []
-
-    def _fake_register(user_id: str, acronym: str):
-        calls.append((user_id, acronym))
-
-    monkeypatch.setattr(cli, "register_daily_update", _fake_register)
-
-    cli.main()
-    out = capsys.readouterr().out
-
-    assert "Draft discussions summary (last 3 months):" in out
-    assert "Total discussion posts: 1" in out
-    assert "Thread A" in out
-    assert calls == []
-
-
-def test_cli_option_4_meeting_updates_flow(monkeypatch, capsys):
-    wg = WorkingGroup(acronym="lsr", name="Link State Routing")
-
-    _feed_inputs(
-        monkeypatch,
-        [
-            "user@example.com",  # email
-            "LSR",               # wg input
-            "4",                 # option
-        ],
-    )
-
-    monkeypatch.setattr(cli, "fetch_working_groups", lambda: [wg])
-    monkeypatch.setattr(cli, "resolve_working_group", lambda _q, _groups: wg)
-    monkeypatch.setattr(
-        cli,
-        "fetch_updates_from_last_two_meetings",
-        lambda _ac, limit=2: [
-            MeetingUpdate(
-                meeting="IETF 122",
-                agendas=["https://datatracker.ietf.org/meeting/122/materials/agenda-wg-lsr"],
-                minutes=["https://datatracker.ietf.org/meeting/122/materials/minutes-wg-lsr"],
-            )
-        ],
-    )
-
-    calls = []
-
-    def _fake_register(user_id: str, acronym: str):
-        calls.append((user_id, acronym))
-
-    monkeypatch.setattr(cli, "register_daily_update", _fake_register)
-
-    cli.main()
-    out = capsys.readouterr().out
-    assert "Updates from last 2 IETF meetings:" in out
-    assert "IETF 122" in out
-    assert "agenda-wg-lsr" in out
-    assert "minutes-wg-lsr" in out
-    assert calls == []
-
-
-def test_cli_option_5_daily_updates_flow(monkeypatch, capsys):
-    wg = WorkingGroup(acronym="lsr", name="Link State Routing")
-
-    _feed_inputs(
-        monkeypatch,
-        [
-            "user@example.com",  # email
-            "LSR",               # wg input
-            "5",                 # option
-            "n",                 # skip register
-            "y",                 # start scheduler
-        ],
-    )
-
-    monkeypatch.setattr(cli, "fetch_working_groups", lambda: [wg])
-    monkeypatch.setattr(cli, "resolve_working_group", lambda _q, _groups: wg)
-    monkeypatch.setattr(
-        cli,
-        "fetch_wg_discussions_last_day",
-        lambda _ac, days=1: [
-            DiscussionPost(
-                date="2099-01-10",
-                subject="Recent thread",
-                author="Alice",
-                url="https://mailarchive.ietf.org/arch/msg/lsr/new1/",
-            )
-        ],
-    )
-    monkeypatch.setattr(
-        cli,
-        "_start_daily_updates_scheduler",
-        lambda: "Daily updates scheduler started (pid=1234).",
-    )
-
-    cli.main()
-    out = capsys.readouterr().out
-    assert "Draft discussions summary (last 1 day):" in out
-    assert "Recent thread" in out
-    assert "Daily updates scheduler started (pid=1234)." in out
-
-
-def test_cli_option_6_upcoming_agenda_flow(monkeypatch, capsys):
-    groups = [
-        WorkingGroup(acronym="lsr", name="Link State Routing"),
-        WorkingGroup(acronym="bess", name="BGP Enabled ServiceS"),
-    ]
-    wg = groups[0]
-
-    _feed_inputs(
-        monkeypatch,
-        [
-            "user@example.com",  # email
-            "LSR",               # wg input
-            "6",                 # option
-        ],
-    )
-
-    monkeypatch.setattr(cli, "fetch_working_groups", lambda: groups)
-    monkeypatch.setattr(cli, "resolve_working_group", lambda _q, _groups: wg)
-    monkeypatch.setattr(
-        cli,
-        "fetch_upcoming_ietf_agenda",
-        lambda _groups: (
-            "IETF 122 - March 15, 2027 - March 21, 2027 - Yokohama, Japan",
-            [
-                UpcomingAgendaItem(
-                    wg_acronym="lsr",
-                    wg_name="Link State Routing",
-                    agenda_url="https://datatracker.ietf.org/meeting/122/materials/agenda-lsr",
-                    agenda_summary="Review milestones and draft status updates.",
-                )
-            ],
+        "resolve_wg_name",
+        lambda _query: WgResolutionResult(
+            query="LSR",
+            matched=WorkingGroup(acronym="lsr", name="Link State Routing"),
+            suggestions=[],
         ),
     )
 
-    calls = []
+    captured_limits: list[int] = []
 
-    def _fake_register(user_id: str, acronym: str):
-        calls.append((user_id, acronym))
+    def _fake_get_wg_active_drafts(_wg_id: str, limit: int = 5):
+        captured_limits.append(limit)
+        return [
+            DraftResult(
+                identifier="draft-ietf-lsr-example-00",
+                title="Example 00",
+                status="WG Document",
+                abstract="",
+                url="",
+            ),
+            DraftResult(
+                identifier="draft-ietf-lsr-example-01",
+                title="Example 01",
+                status="In WG Last Call",
+                abstract="",
+                url="",
+            ),
+        ]
 
-    monkeypatch.setattr(cli, "register_daily_update", _fake_register)
-
-    cli.main()
-    out = capsys.readouterr().out
-    assert "IETF 122 - March 15, 2027 - March 21, 2027 - Yokohama, Japan" in out
-    assert "Working Group Link State Routing (LSR)" in out
-    assert "Review milestones and draft status updates." in out
-    assert calls == []
-
-
-def test_cli_option_7_last_meeting_summary_flow(monkeypatch, capsys):
-    groups = [
-        WorkingGroup(acronym="lsr", name="Link State Routing"),
-        WorkingGroup(acronym="bess", name="BGP Enabled ServiceS"),
-    ]
-    wg = groups[0]
-
-    _feed_inputs(
-        monkeypatch,
-        [
-            "user@example.com",  # email
-            "LSR",               # wg input
-            "7",                 # option
-        ],
-    )
-
-    monkeypatch.setattr(cli, "fetch_working_groups", lambda: groups)
-    monkeypatch.setattr(cli, "resolve_working_group", lambda _q, _groups: wg)
-    monkeypatch.setattr(
-        cli,
-        "fetch_summary_of_last_ietf_meeting",
-        lambda _groups: (
-            "IETF 121 - March 15, 2024 - March 21, 2024 - Brisbane, Australia",
-            [
-                LastMeetingItem(
-                    wg_acronym="lsr",
-                    wg_name="Link State Routing",
-                    agenda_url="https://datatracker.ietf.org/meeting/121/materials/agenda-lsr",
-                    minutes_url="https://datatracker.ietf.org/meeting/121/materials/minutes-lsr",
-                    minutes_summary="Reviewed milestones and progressed two drafts.",
-                )
-            ],
-        ),
-    )
-
-    calls = []
-
-    def _fake_register(user_id: str, acronym: str):
-        calls.append((user_id, acronym))
-
-    monkeypatch.setattr(cli, "register_daily_update", _fake_register)
-
-    cli.main()
-    out = capsys.readouterr().out
-    assert "IETF 121 - March 15, 2024 - March 21, 2024 - Brisbane, Australia" in out
-    assert "Working Group Link State Routing (LSR)" in out
-    assert "Reviewed milestones and progressed two drafts." in out
-    assert calls == []
-
-
-def test_cli_technology_onboarding_flow(monkeypatch, capsys):
-    wg = WorkingGroup(acronym="lsr", name="Link State Routing")
-
-    _feed_inputs(
-        monkeypatch,
-        [
-            "user@example.com",      # email
-            "tech",                  # onboarding mode trigger
-            "bgp-ls flex-algo",      # technology query
-            "1",                     # select top match
-            "1",                     # option
-        ],
-    )
-
-    monkeypatch.setattr(cli, "fetch_working_groups", lambda: [wg])
-    monkeypatch.setattr(
-        cli,
-        "suggest_wgs_by_technology",
-        lambda _query, top_k=10, require_all_terms=True: [
-            WgMatch(
-                acronym="LSR",
-                name="Link State Routing",
-                score=0.93,
-                justification="Matched terms: bgp, flex, algo",
-            )
-        ],
-    )
-    monkeypatch.setattr(cli, "fetch_charter_text", lambda _ac: "charter text")
-    monkeypatch.setattr(cli, "summarize_charter", lambda _txt: "summary output")
+    monkeypatch.setattr(cli, "get_wg_active_drafts", _fake_get_wg_active_drafts)
 
     cli.main()
     out = capsys.readouterr().out
 
-    assert "Technology onboarding results for 'bgp-ls flex-algo':" in out
-    assert "1. LSR - Link State Routing (score=0.9300)" in out
-    assert "Selected WG: LSR - Link State Routing" in out
-    assert "summary output" in out
+    assert captured_limits == [0]
+    assert "Active drafts:" in out
+    assert "draft-ietf-lsr-example-00" in out
+    assert "draft-ietf-lsr-example-01" in out
+    assert "Status: WG Document" in out

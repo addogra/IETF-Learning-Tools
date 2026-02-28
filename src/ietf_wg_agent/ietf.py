@@ -246,6 +246,38 @@ def _tokenize_list(text: str) -> list[str]:
     return [tok for tok in _normalize(text).split() if len(tok) >= 3]
 
 
+def _tokenize_list_with_bigrams(text: str) -> list[str]:
+    """Tokenize text and include adjacent bigrams for phrase-context matching."""
+    tokens = _tokenize_list(text)
+    if not tokens:
+        return []
+    out = list(tokens)
+    out.extend(f"{a}_{b}" for a, b in zip(tokens, tokens[1:]))
+    return out
+
+
+def _query_context_patterns(text: str) -> list[str]:
+    """Extract multi-pattern context phrases from a query.
+
+    Patterns include full normalized query and adjacent token phrases.
+    """
+    normalized = _normalize(text)
+    tokens = _tokenize_list(text)
+    patterns: list[str] = []
+    if normalized:
+        patterns.append(normalized)
+    patterns.extend(f"{a} {b}" for a, b in zip(tokens, tokens[1:]))
+    # Deduplicate while preserving order.
+    seen: set[str] = set()
+    out: list[str] = []
+    for pattern in patterns:
+        if pattern in seen:
+            continue
+        seen.add(pattern)
+        out.append(pattern)
+    return out
+
+
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
@@ -256,7 +288,7 @@ def _charter_db_path() -> Path:
 
 def _token_frequency(text: str) -> dict[str, int]:
     freq: dict[str, int] = {}
-    for tok in _tokenize_list(text):
+    for tok in _tokenize_list_with_bigrams(text):
         freq[tok] = freq.get(tok, 0) + 1
     return freq
 
@@ -337,6 +369,31 @@ def _load_charter_db_payload(path: Optional[Path] = None) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise DatatrackerError("Invalid WG charter DB payload format")
     return payload
+
+
+def _working_groups_from_vector_db() -> list[WorkingGroup]:
+    """Build a WG catalog from persisted vector DB documents."""
+    try:
+        payload = _load_charter_db_payload()
+    except DatatrackerError:
+        return []
+
+    documents = payload.get("documents", [])
+    if not isinstance(documents, list):
+        return []
+
+    out: list[WorkingGroup] = []
+    seen: set[str] = set()
+    for item in documents:
+        if not isinstance(item, dict):
+            continue
+        acronym = str(item.get("acronym", "")).strip().lower()
+        name = str(item.get("name", "")).strip()
+        if not acronym or not name or acronym in seen:
+            continue
+        seen.add(acronym)
+        out.append(WorkingGroup(acronym=acronym, name=name))
+    return out
 
 
 def fetch_working_groups(timeout: int = 20) -> list[WorkingGroup]:
@@ -703,24 +760,42 @@ def get_db_metadata() -> DbMetadata:
 
 
 def resolve_wg_name(user_input: str) -> WgResolutionResult:
-    """Contract-named WG resolution API for acronym/full-name user input."""
+    """Contract-named WG resolution API for acronym/full-name user input.
+
+    Resolution is vector-DB-first (REQ-FEAT-002), then Datatracker API fallback.
+    """
+    groups = _working_groups_from_vector_db()
+    if groups:
+        matched = resolve_working_group(user_input, groups)
+        if matched:
+            return WgResolutionResult(query=user_input, matched=matched, suggestions=[])
+        suggestions = suggest_working_groups(user_input, groups, limit=5)
+        if suggestions:
+            return WgResolutionResult(
+                query=user_input,
+                matched=None,
+                suggestions=suggestions,
+            )
+
+    # Fallback keeps resolution available before first DB rebuild.
     groups = fetch_working_groups()
     matched = resolve_working_group(user_input, groups)
     if matched:
         return WgResolutionResult(query=user_input, matched=matched, suggestions=[])
-
     suggestions = suggest_working_groups(user_input, groups, limit=5)
-    return WgResolutionResult(
-        query=user_input,
-        matched=None,
-        suggestions=suggestions,
-    )
+    return WgResolutionResult(query=user_input, matched=None, suggestions=suggestions)
 
 
 def suggest_wgs_by_technology(
     query: str, top_k: int = 10, require_all_terms: bool = True
 ) -> list[WgMatch]:
-    """Vector-DB-backed technology query matching for WG suggestions."""
+    """Vector-DB-backed technology query matching for WG suggestions.
+
+    Uses multi-pattern matching with context via:
+    - term overlap (including token bigrams),
+    - optional require-all-terms AND semantics,
+    - phrase-pattern boosts from charter/documents raw corpus text.
+    """
     if top_k <= 0:
         return []
 
@@ -730,10 +805,23 @@ def suggest_wgs_by_technology(
     if not isinstance(documents, list) or not isinstance(idf, dict):
         raise DatatrackerError("WG charter DB payload missing documents/idf sections.")
 
-    query_freq = _token_frequency(query)
+    query_freq_all = _token_frequency(query)
+    if not query_freq_all:
+        return []
+    # Compatibility: ignore query terms absent from DB IDF (e.g., new bigrams
+    # when matching against an older DB build).
+    query_freq = {
+        term: count for term, count in query_freq_all.items() if str(term) in idf
+    }
+    if not query_freq:
+        fallback_freq = _token_frequency(" ".join(_tokenize_list(query)))
+        query_freq = {
+            term: count for term, count in fallback_freq.items() if str(term) in idf
+        }
     if not query_freq:
         return []
     query_terms = set(query_freq.keys())
+    context_patterns = _query_context_patterns(query)
     query_vector, query_norm = _build_weighted_vector(query_freq, idf)
 
     scored: list[WgMatch] = []
@@ -758,12 +846,29 @@ def suggest_wgs_by_technology(
         if score <= 0.0 and not overlap:
             continue
 
+        corpus_text = _normalize(
+            " ".join(
+                [
+                    str(doc.get("name", "")),
+                    str(doc.get("charter_text", "")),
+                    str(doc.get("documents_text", "")),
+                ]
+            )
+        )
+        matched_patterns = [pat for pat in context_patterns if pat and pat in corpus_text]
+        if matched_patterns:
+            score += min(0.15, 0.03 * len(matched_patterns))
+
         if overlap:
+            pretty_overlap = [item.replace("_", " ") for item in overlap]
             justification = (
-                f"Matched terms: {', '.join(overlap)}; vector score={score:.4f}"
+                f"Matched terms: {', '.join(pretty_overlap)}; vector score={score:.4f}"
             )
         else:
             justification = f"Vector score={score:.4f}"
+        if matched_patterns:
+            preview = ", ".join(matched_patterns[:3])
+            justification += f"; context patterns: {preview}"
 
         scored.append(
             WgMatch(
@@ -779,14 +884,14 @@ def suggest_wgs_by_technology(
 
 
 def _resolve_wg_or_raise(wg_id: str) -> WorkingGroup:
-    groups = fetch_working_groups()
-    wg = resolve_working_group(wg_id, groups)
-    if wg:
-        return wg
+    resolution = resolve_wg_name(wg_id)
+    if resolution.matched:
+        return resolution.matched
 
-    suggestions = suggest_working_groups(wg_id, groups, limit=5)
-    if suggestions:
-        hint = ", ".join(f"{item.acronym.upper()} ({item.name})" for item in suggestions)
+    if resolution.suggestions:
+        hint = ", ".join(
+            f"{item.acronym.upper()} ({item.name})" for item in resolution.suggestions
+        )
         raise DatatrackerError(f"Unable to resolve WG '{wg_id}'. Suggestions: {hint}")
     raise DatatrackerError(f"Unable to resolve WG '{wg_id}'.")
 
@@ -876,7 +981,12 @@ def get_wg_charter(wg_id: str) -> CharterResult:
 def get_wg_active_drafts(wg_id: str, limit: int = 5) -> list[DraftResult]:
     """Contract wrapper for fetching top active WG drafts."""
     wg = _resolve_wg_or_raise(wg_id)
-    drafts = fetch_top_active_drafts(wg.acronym, limit=max(1, limit))
+    fetch_limit: Optional[int]
+    if limit <= 0:
+        fetch_limit = None
+    else:
+        fetch_limit = limit
+    drafts = fetch_top_active_drafts(wg.acronym, limit=fetch_limit)
     return [
         DraftResult(
             identifier=draft.name,
@@ -1481,7 +1591,7 @@ def _fetch_draft_metadata_from_api(
 
 
 def _fetch_documents_page_drafts(
-    acronym: str, timeout: int = 20, limit: int = 5
+    acronym: str, timeout: int = 20, limit: Optional[int] = 5
 ) -> list[tuple[str, str, str, str]]:
     """
     Return (draft_name, title, doc_url, status) from WG documents page.
@@ -1539,7 +1649,7 @@ def _fetch_documents_page_drafts(
 
         doc_url = "https://datatracker.ietf.org" + href
         out.append((draft, title, doc_url, status))
-        if len(out) >= limit:
+        if limit is not None and len(out) >= limit:
             break
 
     # Fallback parser: if no table rows were parsed, use simple link scan.
@@ -1557,14 +1667,14 @@ def _fetch_documents_page_drafts(
             title = link.get_text(" ", strip=True)
             doc_url = "https://datatracker.ietf.org" + href
             out.append((draft, title, doc_url, ""))
-            if len(out) >= limit:
+            if limit is not None and len(out) >= limit:
                 break
 
     return out
 
 
 def fetch_top_active_drafts(
-    acronym: str, timeout: int = 20, limit: int = 5
+    acronym: str, timeout: int = 20, limit: Optional[int] = 5
 ) -> list[DraftInfo]:
     """Fetch top/latest drafts from WG documents page and include metadata.
 

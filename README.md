@@ -30,12 +30,14 @@ Known requirement gaps:
 
 ## What it does
 
-- Accepts a WG input in short form or full name (example: `LSR` or `Link State Routing`).
-- Supports technology onboarding in CLI by entering `tech` at WG prompt.
-- Resolves the WG via IETF Datatracker.
-- Provides the option `Summary of WG` by fetching the charter from Datatracker and summarizing it.
-- Allows registering WG subscriptions for daily summaries.
-- Includes a daily runner that generates a report from subscriptions and sends email.
+- Supports two start user types in CLI:
+  - New engineer: technology onboarding query.
+  - Experienced engineer: WG name (short or full form).
+- Resolves technology/WG input against the local charter vector DB with Datatracker fallback.
+- Provides:
+  - `Summary of WG` with complete charter text (non-truncated).
+  - `Active drafts` returning all currently parsed active drafts with identifier/title/status.
+- Includes daily runner and scheduler entrypoints for later requirement phases.
 
 ## Install (Cross-Platform)
 
@@ -140,16 +142,11 @@ ietf-wg-agent
 
 Prompts:
 
-- `Email for daily updates`
-- `Working Group Name`
-- Register for daily updates (shown only for option 5)
-- Option `1. Summary of WG`
-- Option `2. Active drafts` (top 5 drafts from WG documents + abstract)
-- Option `3. Draft discussions in a WG` (summary of last 3 months from mailarchive)
-- Option `4. Updates from last 2 IETF meetings` (agenda + minutes links)
-- Option `5. Daily updates` (summary of last 1 day + scheduler start)
-- Option `6. Agenda of upcoming IETF meeting` (next meeting + WG agenda summaries)
-- Option `7. Summary of last IETF meeting` (last completed meeting + WG minutes summaries)
+- `Select user type (1 or 2)`
+- User type `1`: `What technology area are you interested in?`
+- User type `2`: `What Working Group are you interested in?`
+- Option `1. Summary of WG` (complete charter text, non-truncated)
+- Option `2. Active drafts` (all active drafts with identifier/title/status)
 
 ## Run daily job manually
 

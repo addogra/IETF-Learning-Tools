@@ -8,6 +8,12 @@
   - Gap: no Webex technology-onboarding interaction path yet.
   - Next action: expose technology onboarding command in Webex adapter when delivery mode is added.
 
+- `TD-011` (Low) - Technology onboarding output UX cleanup (hide score in user view)
+  - Requirement refs: `REQ-FEAT-001`, `REQ-UX-003`
+  - Progress: onboarding output currently shows ranking score and matched-term explanation, which is useful for debug.
+  - Gap: user-facing output should prioritize clean WG recommendations without raw score noise.
+  - Next action: add a presentation mode that suppresses numeric score in default user output while keeping a debug mode for maintainers.
+
 - `TD-002` (High) - Missing delivery-mode parity for Webex bot
   - Requirement refs: `REQ-MODE-001`, `REQ-MODE-002`
   - Gap: current implementation exposes CLI + MCP + daily scheduler, but no Webex command surface.
