@@ -13,5 +13,15 @@
 ## Discussions
 - `https://mailarchive.ietf.org/arch/browse/<acronym>/`
 
+## Meetings and Agendas
+- `https://datatracker.ietf.org/wg/<acronym>/meetings/`
+- `https://datatracker.ietf.org/meeting/`
+- `https://datatracker.ietf.org/meeting/<number>/`
+
+## Milestones and Document Metadata
+- `https://datatracker.ietf.org/api/v1/group/milestone/`
+- `https://datatracker.ietf.org/api/v1/doc/document/`
+
 ## Notes
 - Parsers must tolerate missing sections and changing HTML structure.
+- Prefer official API endpoints when available, then degrade to robust HTML parsing.

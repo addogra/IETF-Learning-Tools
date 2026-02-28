@@ -1,6 +1,10 @@
 
 # Upcoming IETF Agenda Spec
 
+## Requirement Mapping
+
+- `REQ-FEAT-008`: discover next IETF meeting metadata and summarize WG agendas where published.
+
 ## Feature
 Agenda of upcoming IETF meeting.
 
@@ -17,6 +21,14 @@ Header:
 
 Body:
 - `Working Group <WG Name> -- <agenda summary>`
+
+## Current Status (Coded, Not Runtime-Verified Here)
+
+- Next-meeting discovery is coded.
+- WG agenda filtering and summary generation is coded.
+
+Status:
+- `REQ-FEAT-008`: **Coded**.
 
 ## Delivery Surfaces
 - CLI option `6`

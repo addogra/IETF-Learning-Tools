@@ -1,109 +1,52 @@
 
 # New Engineer Quickstart Flow
 
-## Goal
-Get a new engineer productive on `ietf-wg-agent` in one page: understand structure, run locally, validate behavior, and ship safe updates.
+## Purpose
+Provide a compact entrypoint for developer onboarding and point to the full onboarding source.
 
-## 1) 10-Minute Orientation
-```text
-+-----------------------------+
-| Read in this order          |
-+-----------------------------+
-| 1. docs/DESIGN.md           |
-| 2. ARCHITECTURE.md          |
-| 3. docs/design-docs/index.md|
-| 4. SKILLS.md                |
-| 5. tests/ (feature coverage)|
-+-----------------------------+
+## Primary Onboarding Source
+
+Use this as canonical guide:
+- `docs/product-specs/new-user-onboarding.md`
+
+This document is the short version and should remain aligned with that guide.
+
+## Read Order (Day 0)
+
+1. `requirements.txt`
+2. `docs/product-specs/new-user-onboarding.md`
+3. `ARCHITECTURE.md`
+4. `docs/DESIGN.md`
+5. `docs/design-docs/index.md`
+6. `docs/exec-plans/active/2026-02-28-requirements-parity-phase-1.md`
+7. `docs/exec-plans/tech-debt-tracker.md`
+
+## First Local Run
+
+1. Install with `./scripts/setup.sh` (or platform equivalent).
+2. Activate virtual environment.
+3. Run CLI: `ietf-wg-agent`.
+4. Run tests: `python -m pytest -q tests`.
+
+## Architecture-at-a-Glance
+
+```mermaid
+flowchart LR
+  CLI[CLI] --> Core[ietf.py]
+  MCP[MCP] --> Core
+  Daily[Daily + Scheduler] --> Core
+  Core --> Sum[summarizer.py]
+  Daily --> Notify[notifier.py]
+  Daily --> Subs[subscriptions.py]
+  Core --> DT[Datatracker]
+  Core --> MA[Mailarchive]
 ```
 
-## 2) Repository Map
-```text
-ietf-wg-agent/
-|
-+-- src/ietf_wg_agent/
-|   +-- ietf.py                 # fetch/parse IETF + mailarchive data
-|   +-- cli.py                  # interactive app
-|   +-- server.py               # MCP tools
-|   +-- daily.py                # daily report/email pipelines
-|   +-- discussion_scheduler.py # daily update scheduler loop
-|   +-- notifier.py             # SMTP + retry/backoff/jitter + HTML email
-|   +-- subscriptions.py        # local JSON subscriptions
-|   +-- summarizer.py           # deterministic summarization helpers
-|
-+-- docs/
-|   +-- DESIGN.md
-|   +-- design-docs/
-|   +-- product-specs/
-|
-+-- skills/                     # feature skill contracts
-+-- tests/                      # parser, CLI, MCP, delivery, docs tests
-```
+## Contribution Flow
 
-## 3) Runtime Surfaces
-```text
-User/Automation
-   |
-   +--> ietf-wg-agent                    (CLI)
-   +--> ietf-wg-mcp                      (MCP tools)
-   +--> ietf-wg-daily                    (batch daily email/report)
-   +--> ietf-wg-daily-updates*           (discussion daily updates)
-```
-
-## 4) Feature-to-Flow Snapshot
-```text
-[WG input]
-   |
-   v
-[Resolve WG in ietf.py]
-   |
-   +--> [Summary of WG] ----------------> charter parse -> summarize
-   +--> [Active drafts] ----------------> docs page -> top 5 -> status+abstract
-   +--> [Draft discussions] ------------> mailarchive (3 months) -> summarize
-   +--> [Last 2 meetings updates] ------> meetings page -> agenda+minutes
-   +--> [Daily updates] ----------------> mailarchive (1 day) -> send only if updates
-   +--> [Upcoming IETF agenda] ---------> next meeting -> WG agendas where published
-   +--> [Last IETF meeting summary] ----> last meeting -> WG minutes summary
-```
-
-## 5) Local Run Quickstart
-```text
-1. Create venv with Python 3.9+
-2. Install package:
-   pip install -e .
-3. Run CLI:
-   ietf-wg-agent
-4. Run tests:
-   pytest -q
-```
-
-## 6) Safe Change Workflow
-```text
-[Pick feature/module]
-   |
-   v
-[Add/adjust parser or orchestration]
-   |
-   v
-[Add/adjust tests first for new HTML/layout cases]
-   |
-   v
-[Run full test suite: pytest -q]
-   |
-   v
-[Update docs + skills contracts]
-   |
-   v
-[Ship]
-```
-
-## 7) Done Criteria Checklist
-```text
-[ ] Feature works in CLI
-[ ] Feature exposed in MCP (if applicable)
-[ ] Email/delivery path updated (if applicable)
-[ ] New tests added and all tests passing
-[ ] docs/DESIGN.md updated
-[ ] docs/design-docs/* updated
-[ ] SKILLS.md + skills/<feature>/SKILL.md updated
-```
+1. Pick requirement-linked task from active plan/tech debt.
+2. Add parser + orchestration changes.
+3. Add tests (CLI-path + parser/unit).
+4. Run full tests.
+5. Update docs and execution-plan files.
+6. Submit PR with requirement IDs and risk notes.

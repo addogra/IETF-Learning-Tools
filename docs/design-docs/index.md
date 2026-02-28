@@ -12,13 +12,15 @@ Use it before changing parsing logic, runtime flows, or module interfaces.
 - MCP install path is validated separately on Python 3.10+.
 
 ## Recommended Reading Order
-1. `core-beliefs.md`
-2. `../DESIGN.md`
-3. `data-sources.md`
-4. `parser-strategy.md`
-5. Module docs in `modules/`
+1. `../product-specs/new-user-onboarding.md`
+2. `core-beliefs.md`
+3. `../DESIGN.md`
+4. `data-sources.md`
+5. `parser-strategy.md`
+6. Module docs in `modules/`
 
 ## Core Design Docs
+- `../product-specs/new-user-onboarding.md`: complete Day-0 to PR developer onboarding.
 - `core-beliefs.md`: non-negotiable design principles.
 - `data-sources.md`: source endpoints and fallback rules.
 - `parser-strategy.md`: parsing approach and expected failure modes.

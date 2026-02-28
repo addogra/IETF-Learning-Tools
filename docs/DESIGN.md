@@ -282,3 +282,25 @@ When adding a feature:
    - `docs/design-docs/*`,
    - product spec docs,
    - `SKILLS.md` and feature `skills/*/SKILL.md`.
+
+## 15. Implementation Status and Gaps
+
+### Implemented (As-Coded)
+- WG resolve/suggest flow in CLI and MCP.
+- Charter retrieval with summary presentation.
+- Top-5 active draft extraction (title/status/abstract).
+- Discussion summaries (3 months and 1 day windows).
+- Upcoming and last IETF meeting summaries.
+- Daily delivery and scheduler flows with SMTP retry controls.
+
+### Partial or Missing Against Requirements
+- Full charter output mode (non-truncated contract) is not fully exposed.
+- Last-2-meeting updates currently emphasize links over agenda/minutes summaries.
+- Technology-onboarding via charter vector DB is not implemented.
+- Draft tracker feature is not implemented.
+- Webex delivery mode is not implemented.
+- Normative internal API naming contract is not yet aligned.
+
+Reference:
+- Active plan: `docs/exec-plans/active/2026-02-28-requirements-parity-phase-1.md`
+- Tech debt: `docs/exec-plans/tech-debt-tracker.md`

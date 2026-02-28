@@ -3,6 +3,32 @@
 
 A local MCP server + CLI agent for IETF Working Group discovery and charter summaries.
 
+## Documentation First
+
+Start here if you are new to the codebase:
+- Full onboarding kit: `docs/product-specs/new-user-onboarding.md`
+- Runtime architecture: `ARCHITECTURE.md`
+- Active execution plan: `docs/exec-plans/active/2026-02-28-requirements-parity-phase-1.md`
+- Current tech debt: `docs/exec-plans/tech-debt-tracker.md`
+
+## Project Status Snapshot (Coded, Not Runtime-Verified Here)
+
+Implemented:
+- WG resolution and ranked suggestions.
+- Charter retrieval + summary output.
+- Top 5 active drafts with status and abstract extraction.
+- WG discussion summaries (last 3 months and last 1 day modes).
+- Upcoming IETF agenda summary and last IETF meeting summary.
+- Daily report and email delivery with retry/backoff/jitter.
+- CLI and MCP delivery surfaces for implemented features.
+
+Known requirement gaps:
+- Technology-onboarding vector DB workflow is not yet implemented.
+- Draft tracker feature is not yet implemented.
+- Webex bot delivery mode is not yet implemented.
+- Full (non-truncated) charter output mode is a tracked gap.
+- Last-2-meeting response currently favors links over agenda/minutes summaries.
+
 ## What it does
 
 - Accepts a WG input in short form or full name (example: `LSR` or `Link State Routing`).
@@ -221,6 +247,17 @@ python -m pytest -q tests
 
 CI is configured to run the full test suite on every push/pull request:
 `.github/workflows/tests.yml`.
+
+## Contributing
+
+For every behavioral change:
+1. Add at least one CLI-path test and one parser/unit test.
+2. Run `python -m pytest -q tests`.
+3. Update docs under `docs/`.
+4. Update execution plans:
+   - `docs/exec-plans/active/`
+   - `docs/exec-plans/completed/`
+   - `docs/exec-plans/tech-debt-tracker.md`
 
 ## Daily Updates Scheduler
 

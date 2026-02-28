@@ -1,6 +1,12 @@
 
 # Daily Updates Spec
 
+## Requirement Mapping
+
+- `REQ-FEAT-007`: summarize last-day activity and deliver updates only when activity exists.
+- `REQ-REL-002`: notifications should be retry-safe.
+- `REQ-REL-003`: skip outbound update when no new content exists.
+
 ## Feature
 Daily updates from WG mailarchive.
 
@@ -15,6 +21,17 @@ WG acronym/name resolved to canonical WG and existing user subscriptions.
 - Start scheduler mode for recurring daily checks.
 - Send email only when at least one discussion exists in last day.
 - If no updates exist, do not send any email.
+
+## Current Status (Coded, Not Runtime-Verified Here)
+
+- Last-day discussion extraction is coded.
+- Conditional email suppression when no updates exist is coded.
+- SMTP retry/backoff/jitter behavior is coded.
+
+Status:
+- `REQ-FEAT-007`: **Coded**.
+- `REQ-REL-002`: **Coded**.
+- `REQ-REL-003`: **Coded**.
 
 ## Delivery Surfaces
 - CLI option `5`

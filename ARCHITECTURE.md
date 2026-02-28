@@ -7,6 +7,10 @@
 - MCP server: `ietf-wg-mcp`
 - Daily runner: `ietf-wg-daily`
 
+Additional scheduler entrypoints:
+- `ietf-wg-daily-updates` (one-shot discussion-update run)
+- `ietf-wg-daily-updates-scheduler` (looping scheduler)
+
 ## Python Compatibility
 - Base application: Python 3.9+
 - MCP support: Python 3.10+
@@ -27,6 +31,41 @@
 - `src/ietf_wg_agent/discussion_scheduler.py`: recurring scheduler for daily discussion updates.
 - `src/ietf_wg_agent/notifier.py`: SMTP delivery with retry/backoff/jitter.
 - `src/ietf_wg_agent/subscriptions.py`: local subscription persistence.
+
+## High-Level Flow
+
+```mermaid
+flowchart LR
+  User[User / Automation] --> CLI[CLI]
+  User --> MCPClient[MCP Client]
+  MCPClient --> MCP[MCP Server]
+  Sched[Scheduler] --> Daily[Daily Pipeline]
+  CLI --> Core[Core Data Layer: ietf.py]
+  MCP --> Core
+  Daily --> Core
+  Core --> Sum[summarizer.py]
+  Daily --> Subs[(subscriptions.json)]
+  Daily --> SMTP[SMTP]
+  Core --> DT[datatracker.ietf.org]
+  Core --> MA[mailarchive.ietf.org]
+```
+
+## Requirement Coverage Snapshot (As-Coded)
+
+Implemented:
+- WG resolution/suggestions.
+- Charter retrieval (with summarized presentation in current CLI/MCP path).
+- Active drafts parsing with status/abstract.
+- Discussion summaries (3 months and last day).
+- Upcoming and last IETF meeting summaries.
+- Daily email delivery with skip-if-no-update behavior.
+
+Tracked gaps:
+- Technology-onboarding vector DB lifecycle.
+- Draft tracker.
+- Webex delivery surface parity.
+- Full charter output mode (non-summary path).
+- Meeting update summaries for agenda/minutes content.
 
 ## Skills Layer
 - Repository-level skill registry: `SKILLS.md`
