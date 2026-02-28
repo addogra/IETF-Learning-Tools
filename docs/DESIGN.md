@@ -18,10 +18,16 @@ The application helps users monitor IETF Working Groups (WGs) by collecting and 
 - agenda of upcoming IETF meeting,
 - summary of last IETF meeting.
 
+Maintainer scope in the same codebase:
+- WG charter vector DB lifecycle and metadata inspection,
+- deterministic technology-to-WG matching against local persisted corpus,
+- garbage collector checks for documentation/architecture/API-contract drift.
+
 ## 3. Runtime Surfaces
 - CLI app: `ietf-wg-agent`
 - MCP server: `ietf-wg-mcp`
 - Batch daily runner: `ietf-wg-daily`
+- Maintainer operations: `ietf-wg-maintainer`
 - Daily discussion scheduler:
   - `ietf-wg-daily-updates`
   - `ietf-wg-daily-updates-scheduler`
@@ -180,6 +186,12 @@ The application helps users monitor IETF Working Groups (WGs) by collecting and 
 - Include only WGs with meeting material/minutes for that meeting.
 - Summarize minutes per WG.
 
+### 7.9 Maintainer Vector DB + Garbage Collector
+- Rebuild command crawls active WGs and ingests both `/about/` and `/documents/` text.
+- Corpus is converted into deterministic sparse vectors and stored in-repo.
+- Metadata command reports build timestamp, counts, and checksum.
+- Garbage collector reports missing required artifacts, module/doc mapping drift, skill-path drift, and missing required API contract names.
+
 ## 8. Delivery Modes
 ```text
 +----------------------+-------------------------+------------------------+
@@ -197,6 +209,7 @@ The application helps users monitor IETF Working Groups (WGs) by collecting and 
 ### `src/ietf_wg_agent/ietf.py`
 - All remote data retrieval and HTML/API parsing.
 - WG lookup, suggestions, charter extraction, drafts parsing, discussions parsing, meetings parsing.
+- Maintainer vector DB lifecycle (`rebuild_wg_charter_db`, `get_db_metadata`) and technology matching (`suggest_wgs_by_technology`).
 
 ### `src/ietf_wg_agent/summarizer.py`
 - Deterministic summarization helpers for charter/discussion/minutes style text.
@@ -218,6 +231,9 @@ The application helps users monitor IETF Working Groups (WGs) by collecting and 
 
 ### `src/ietf_wg_agent/discussion_scheduler.py`
 - Time-loop scheduler for periodic “daily updates” checks.
+
+### `src/ietf_wg_agent/maintainer.py`
+- Maintainer-only command routing for DB rebuild/metadata and garbage-collector consistency checks.
 
 ## 10. Detailed Architecture Flow (ASCII)
 ```text
@@ -296,11 +312,12 @@ When adding a feature:
 ### Partial or Missing Against Requirements
 - Full charter output mode (non-truncated contract) is not fully exposed.
 - Last-2-meeting updates currently emphasize links over agenda/minutes summaries.
-- Technology-onboarding via charter vector DB is not implemented.
+- User-facing technology-onboarding route is not yet integrated across CLI/MCP/Webex.
 - Draft tracker feature is not implemented.
 - Webex delivery mode is not implemented.
-- Normative internal API naming contract is not yet aligned.
+- Normative internal API naming is partially aligned (`REQ-API-001/002` delivered, `REQ-API-003..006` pending wrappers).
 
 Reference:
 - Active plan: `docs/exec-plans/active/2026-02-28-requirements-parity-phase-1.md`
 - Tech debt: `docs/exec-plans/tech-debt-tracker.md`
+- API contract matrix: `docs/design-docs/internal-api-contract.md`

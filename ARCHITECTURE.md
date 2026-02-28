@@ -6,6 +6,7 @@
 - CLI app: `ietf-wg-agent`
 - MCP server: `ietf-wg-mcp`
 - Daily runner: `ietf-wg-daily`
+- Maintainer tool: `ietf-wg-maintainer`
 
 Additional scheduler entrypoints:
 - `ietf-wg-daily-updates` (one-shot discussion-update run)
@@ -21,9 +22,12 @@ Additional scheduler entrypoints:
 
 ## Core Modules
 - `src/ietf_wg_agent/ietf.py`: IETF data fetch/parsing (WG lookup, charter, drafts, discussions).
+  - Includes maintainer vector DB lifecycle (`rebuild_wg_charter_db`, `get_db_metadata`).
+  - Includes technology matching API (`suggest_wgs_by_technology`) over local charter vector DB.
   - Includes meetings update parsing (agenda + minutes for last 2 meetings).
   - Includes upcoming IETF agenda discovery (next meeting + WG agenda summary).
   - Includes last completed IETF meeting summary (WG minutes).
+- `src/ietf_wg_agent/maintainer.py`: maintainer-only command surface for DB rebuild/metadata and garbage-collector checks.
 - `src/ietf_wg_agent/summarizer.py`: text summarization for charters and discussion threads.
 - `src/ietf_wg_agent/cli.py`: interactive user flow.
 - `src/ietf_wg_agent/server.py`: MCP tool registration and orchestration.
@@ -61,7 +65,7 @@ Implemented:
 - Daily email delivery with skip-if-no-update behavior.
 
 Tracked gaps:
-- Technology-onboarding vector DB lifecycle.
+- User-facing technology-onboarding flow integration across CLI/MCP/Webex.
 - Draft tracker.
 - Webex delivery surface parity.
 - Full charter output mode (non-summary path).
@@ -81,8 +85,15 @@ Tracked gaps:
 ## Data Stores
 - Subscription DB: `~/.ietf_wg_agent_subscriptions.json`
 - Reports: `reports/daily-YYYY-MM-DD.txt`
+- Maintainer vector DB: `data/wg_charter_vector_db.json`
+  - Built from WG `/about/` charter text + `/documents/` page text.
+  - Rebuilt via `ietf-wg-maintainer rebuild-database`.
 
 ## Reliability Strategy
 - API-first parsing with HTML fallbacks.
 - Defensive parsers for multiple page layouts.
 - Test suite covers CLI flows, suggestions, drafts/status/abstract parsing, and discussion summaries.
+
+## API Contract Reference
+- Requirement-named API status matrix:
+  - `docs/design-docs/internal-api-contract.md`

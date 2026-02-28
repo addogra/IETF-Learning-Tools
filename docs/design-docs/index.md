@@ -15,9 +15,10 @@ Use it before changing parsing logic, runtime flows, or module interfaces.
 1. `../product-specs/new-user-onboarding.md`
 2. `core-beliefs.md`
 3. `../DESIGN.md`
-4. `data-sources.md`
-5. `parser-strategy.md`
-6. Module docs in `modules/`
+4. `internal-api-contract.md`
+5. `data-sources.md`
+6. `parser-strategy.md`
+7. Module docs in `modules/`
 
 ## Core Design Docs
 - `../product-specs/new-user-onboarding.md`: complete Day-0 to PR developer onboarding.
@@ -25,7 +26,9 @@ Use it before changing parsing logic, runtime flows, or module interfaces.
 - `data-sources.md`: source endpoints and fallback rules.
 - `parser-strategy.md`: parsing approach and expected failure modes.
 - `../DESIGN.md`: system-level architecture + flowcharts.
+- `internal-api-contract.md`: normative REQ-API name matrix, status, wrappers, and gaps.
 - `../../SKILLS.md`: skill registry for feature-level operational contracts.
+- `vector-db-implementation-walkthrough.md`: implementation decisions + step-by-step flow for charter vector DB and maintainer commands.
 
 ## Module Design Docs
 - `modules/cli-module.md`: CLI implementation and control flow.
@@ -35,6 +38,7 @@ Use it before changing parsing logic, runtime flows, or module interfaces.
 - `modules/notifier-module.md`: SMTP delivery implementation and control flow.
 - `modules/daily-module.md`: scheduled report/email run implementation and control flow.
 - `modules/server-module.md`: MCP tool orchestration implementation and control flow.
+- `modules/maintainer-module.md`: maintainer DB lifecycle and garbage-collector implementation.
 
 ## Feature-to-Module Map
 - WG resolution + suggestions: `modules/ietf-module.md`, `modules/cli-module.md`
@@ -47,6 +51,7 @@ Use it before changing parsing logic, runtime flows, or module interfaces.
 - Last IETF meeting summary (WG minutes): `modules/ietf-module.md`, `modules/cli-module.md`, `modules/daily-module.md`
 - Daily email delivery: `modules/daily-module.md`, `modules/notifier-module.md`
 - MCP tools: `modules/server-module.md`
+- Maintainer operations: `modules/maintainer-module.md`, `modules/ietf-module.md`
 
 ## Update Rules
 - Any behavior change must update the relevant module doc.

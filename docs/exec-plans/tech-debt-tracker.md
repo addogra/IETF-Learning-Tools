@@ -2,10 +2,11 @@
 # Tech Debt Tracker
 
 ## Open Items
-- `TD-001` (High) - Missing technology-onboarding/vector DB lifecycle
+- `TD-001` (Medium) - User-facing technology onboarding remains incomplete
   - Requirement refs: `REQ-FEAT-001`, `REQ-MAINT-001..006`, `REQ-VDB-001..003`, `REQ-API-001/002`
-  - Gap: no charter corpus build/rebuild, no vector matching pipeline, no technology-input flow.
-  - Next action: implement DB lifecycle + deterministic matching API in active plan phase 1.
+  - Progress: maintainer DB lifecycle + local vector matching APIs implemented (`rebuild_wg_charter_db`, `get_db_metadata`, `suggest_wgs_by_technology`).
+  - Gap: no CLI/MCP technology-input onboarding flow yet.
+  - Next action: wire technology-input route and response formatting across delivery modes.
 
 - `TD-002` (High) - Missing delivery-mode parity for Webex bot
   - Requirement refs: `REQ-MODE-001`, `REQ-MODE-002`
@@ -34,13 +35,15 @@
 
 - `TD-007` (Medium) - Normative internal API names missing
   - Requirement refs: `REQ-API-001..006`
-  - Gap: current callable names differ from required API contract names.
-  - Next action: add contract-named wrappers/facade and migration notes.
+  - Progress: REQ-API-001/002 names are now present.
+  - Gap: REQ-API-003..006 contract names are still missing.
+  - Next action: add remaining contract-named wrappers/facade and migration notes.
 
-- `TD-008` (Medium) - Maintainer garbage collector missing
+- `TD-008` (Low) - Garbage collector depth is limited
   - Requirement refs: `REQ-MAINT-007`
-  - Gap: no command for documentation/architecture consistency checks.
-  - Next action: implement maintainer command and report format.
+  - Progress: `ietf-wg-maintainer garbage-collector` command now exists with artifact/mapping/API checks.
+  - Gap: checks do not yet cover deeper semantic drift rules.
+  - Next action: expand rule set and severity model for architectural constraints.
 
 - `TD-009` (Medium) - Parser resilience needs fixture-backed contract tests
   - Requirement refs: `REQ-DATA-001`, `REQ-REL-001`

@@ -14,12 +14,17 @@ Each section uses API-first + HTML fallback parsing to resist layout changes.
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from datetime import date as date_cls, datetime, timedelta, timezone
+import hashlib
+import json
+import math
+from pathlib import Path
 import re
-from typing import Iterable, Optional
+from typing import Any, Iterable, Optional
 
 import requests
 from bs4 import BeautifulSoup
 
+WG_INDEX_URL = "https://datatracker.ietf.org/wg/"
 WG_API_URL = "https://datatracker.ietf.org/api/v1/group/group/"
 WG_ABOUT_URL_TEMPLATE = "https://datatracker.ietf.org/wg/{acronym}/about/"
 WG_DOCUMENTS_URL_TEMPLATE = "https://datatracker.ietf.org/wg/{acronym}/documents/"
@@ -29,6 +34,7 @@ MAILARCHIVE_BROWSE_URL_TEMPLATE = "https://mailarchive.ietf.org/arch/browse/{acr
 WG_MEETINGS_URL_TEMPLATE = "https://datatracker.ietf.org/wg/{acronym}/meetings/"
 MEETINGS_INDEX_URL = "https://datatracker.ietf.org/meeting/"
 MEETING_PAGE_URL_TEMPLATE = "https://datatracker.ietf.org/meeting/{number}/"
+CHARTER_DB_SCHEMA_VERSION = 1
 
 
 @dataclass(frozen=True)
@@ -86,6 +92,44 @@ class LastMeetingItem:
     minutes_summary: str
 
 
+@dataclass(frozen=True)
+class RebuildResult:
+    db_path: str
+    built_at: str
+    wg_count: int
+    term_count: int
+    skipped_wgs: int
+    deleted_previous: bool
+    checksum: str
+
+
+@dataclass(frozen=True)
+class DbMetadata:
+    db_path: str
+    exists: bool
+    schema_version: int
+    built_at: str
+    wg_count: int
+    term_count: int
+    skipped_wgs: int
+    checksum: str
+
+
+@dataclass(frozen=True)
+class WgMatch:
+    acronym: str
+    name: str
+    score: float
+    justification: str
+
+
+@dataclass(frozen=True)
+class WgResolutionResult:
+    query: str
+    matched: Optional[WorkingGroup]
+    suggestions: list[WorkingGroup]
+
+
 class DatatrackerError(RuntimeError):
     pass
 
@@ -100,6 +144,103 @@ def _normalize_compact(text: str) -> str:
 
 def _tokenize(text: str) -> set[str]:
     return {tok for tok in _normalize(text).split() if len(tok) >= 3}
+
+
+def _tokenize_list(text: str) -> list[str]:
+    return [tok for tok in _normalize(text).split() if len(tok) >= 3]
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _charter_db_path() -> Path:
+    return _repo_root() / "data" / "wg_charter_vector_db.json"
+
+
+def _token_frequency(text: str) -> dict[str, int]:
+    freq: dict[str, int] = {}
+    for tok in _tokenize_list(text):
+        freq[tok] = freq.get(tok, 0) + 1
+    return freq
+
+
+def _compute_idf(doc_term_freqs: Iterable[dict[str, int]]) -> dict[str, float]:
+    df: dict[str, int] = {}
+    docs = list(doc_term_freqs)
+    for tf in docs:
+        for term in tf.keys():
+            df[term] = df.get(term, 0) + 1
+    total_docs = max(1, len(docs))
+    return {
+        term: math.log((1.0 + total_docs) / (1.0 + doc_freq)) + 1.0
+        for term, doc_freq in df.items()
+    }
+
+
+def _build_weighted_vector(
+    freq: dict[str, int], idf: dict[str, float]
+) -> tuple[dict[str, float], float]:
+    total = sum(freq.values())
+    if total <= 0:
+        return {}, 0.0
+
+    vector: dict[str, float] = {}
+    norm_sq = 0.0
+    for term, count in freq.items():
+        weight = (count / total) * float(idf.get(term, 1.0))
+        vector[term] = weight
+        norm_sq += weight * weight
+    return vector, math.sqrt(norm_sq)
+
+
+def _cosine_similarity(
+    query_vector: dict[str, float],
+    query_norm: float,
+    doc_vector: dict[str, float],
+    doc_norm: float,
+) -> float:
+    if query_norm <= 0.0 or doc_norm <= 0.0:
+        return 0.0
+
+    if len(query_vector) > len(doc_vector):
+        query_vector, doc_vector = doc_vector, query_vector
+        query_norm, doc_norm = doc_norm, query_norm
+
+    dot = 0.0
+    for term, weight in query_vector.items():
+        dot += weight * float(doc_vector.get(term, 0.0))
+    return dot / (query_norm * doc_norm)
+
+
+def _compute_db_checksum(documents: Iterable[dict[str, Any]]) -> str:
+    digest = hashlib.sha256()
+    for doc in sorted(documents, key=lambda item: str(item.get("acronym", ""))):
+        digest.update(str(doc.get("acronym", "")).encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(str(doc.get("name", "")).encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(str(doc.get("charter_text", "")).encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(str(doc.get("documents_text", "")).encode("utf-8"))
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def _load_charter_db_payload(path: Optional[Path] = None) -> dict[str, Any]:
+    db_path = path or _charter_db_path()
+    if not db_path.exists():
+        raise DatatrackerError(
+            f"WG charter DB not found at {db_path}. Run rebuild_wg_charter_db() first."
+        )
+    try:
+        payload = json.loads(db_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise DatatrackerError(f"Unable to read WG charter DB: {exc}") from exc
+
+    if not isinstance(payload, dict):
+        raise DatatrackerError("Invalid WG charter DB payload format")
+    return payload
 
 
 def fetch_working_groups(timeout: int = 20) -> list[WorkingGroup]:
@@ -232,6 +373,313 @@ def suggest_working_groups(
         if len(out) >= limit:
             break
     return out
+
+
+def crawl_active_working_groups(timeout: int = 20) -> list[WorkingGroup]:
+    """Crawl Datatracker WG index page and enumerate active WG entries.
+
+    Falls back to API catalog retrieval when HTML parsing cannot produce entries.
+    """
+    try:
+        response = requests.get(WG_INDEX_URL, timeout=timeout)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise DatatrackerError(f"Unable to fetch WG index page: {exc}") from exc
+
+    soup = BeautifulSoup(response.text, "html.parser")
+    parsed_rows: list[tuple[str, str]] = []
+    seen: set[str] = set()
+
+    for row in soup.find_all("tr"):
+        link = row.find("a", href=re.compile(r"^/wg/[a-z0-9][a-z0-9-]*/$"))
+        if not link:
+            continue
+
+        href = str(link.get("href", "")).strip().lower()
+        match = re.match(r"^/wg/([a-z0-9][a-z0-9-]*)/$", href)
+        if not match:
+            continue
+
+        row_text = row.get_text(" ", strip=True).lower()
+        if "concluded" in row_text or "terminated" in row_text:
+            continue
+
+        acronym = match.group(1)
+        if acronym in seen:
+            continue
+
+        cells = row.find_all("td")
+        parsed_name = ""
+        if len(cells) >= 2:
+            parsed_name = cells[1].get_text(" ", strip=True)
+        if not parsed_name:
+            parsed_name = link.get_text(" ", strip=True)
+        if not parsed_name:
+            parsed_name = acronym.upper()
+
+        parsed_rows.append((acronym, parsed_name))
+        seen.add(acronym)
+
+    if not parsed_rows:
+        # Fallback keeps maintainer flow operational if index layout changes.
+        return fetch_working_groups(timeout=timeout)
+
+    # Use API mapping to stabilize canonical WG names while preserving index coverage.
+    name_map: dict[str, str] = {}
+    try:
+        for item in fetch_working_groups(timeout=timeout):
+            name_map[item.acronym.lower()] = item.name
+    except DatatrackerError:
+        name_map = {}
+
+    groups: list[WorkingGroup] = []
+    for acronym, parsed_name in parsed_rows:
+        groups.append(
+            WorkingGroup(
+                acronym=acronym,
+                name=name_map.get(acronym.lower(), parsed_name),
+            )
+        )
+    return groups
+
+
+def fetch_wg_documents_section_text(acronym: str, timeout: int = 20) -> str:
+    """Fetch and extract textual corpus from WG documents page.
+
+    This captures document-table and section text so terms appearing in draft
+    titles/metadata contribute to technology matching.
+    """
+    url = WG_DOCUMENTS_URL_TEMPLATE.format(acronym=acronym.lower())
+    try:
+        response = requests.get(url, timeout=timeout)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise DatatrackerError(f"Unable to fetch WG documents page: {exc}") from exc
+
+    soup = BeautifulSoup(response.text, "html.parser")
+    for tag in soup.find_all(["script", "style", "noscript"]):
+        tag.decompose()
+
+    root = soup.find("main") or soup.body or soup
+    raw = root.get_text("\n", strip=True)
+    lines = [
+        re.sub(r"\s+", " ", line).strip()
+        for line in raw.splitlines()
+        if line and line.strip()
+    ]
+    text = "\n".join(lines).strip()
+    if not text:
+        raise DatatrackerError(f"No documents-section text found at {url}")
+    return text
+
+
+def rebuild_wg_charter_db(force_delete_old: bool = True) -> RebuildResult:
+    """Rebuild local WG charter vector DB from Datatracker sources.
+
+    Flow:
+    1) Enumerate active WGs from Datatracker index.
+    2) Fetch each WG about page and extract complete charter text.
+    3) Build TF-IDF style sparse vectors and persist within repo.
+    """
+    db_path = _charter_db_path()
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+
+    deleted_previous = False
+    if db_path.exists() and force_delete_old:
+        db_path.unlink()
+        deleted_previous = True
+
+    groups = crawl_active_working_groups()
+    if not groups:
+        raise DatatrackerError("No working groups discovered from Datatracker index.")
+
+    documents: list[dict[str, Any]] = []
+    errors: list[str] = []
+    warnings: list[str] = []
+    documents_fetch_failures = 0
+    for wg in sorted(groups, key=lambda item: item.acronym.lower()):
+        try:
+            charter_text = fetch_charter_text(wg.acronym)
+        except DatatrackerError as exc:
+            errors.append(f"{wg.acronym}: {exc}")
+            continue
+
+        documents_text = ""
+        try:
+            documents_text = fetch_wg_documents_section_text(wg.acronym)
+        except DatatrackerError as exc:
+            documents_fetch_failures += 1
+            warnings.append(f"{wg.acronym}: {exc}")
+
+        term_freq = _token_frequency(
+            f"{wg.acronym} {wg.name} {charter_text} {documents_text}"
+        )
+        if not term_freq:
+            errors.append(f"{wg.acronym}: extracted charter had no usable tokens")
+            continue
+
+        documents.append(
+            {
+                "acronym": wg.acronym,
+                "name": wg.name,
+                "about_url": WG_ABOUT_URL_TEMPLATE.format(acronym=wg.acronym.lower()),
+                "documents_url": WG_DOCUMENTS_URL_TEMPLATE.format(acronym=wg.acronym.lower()),
+                "charter_text": charter_text,
+                "documents_text": documents_text,
+                "term_freq": term_freq,
+            }
+        )
+
+    if not documents:
+        raise DatatrackerError(
+            "No WG charters were extracted successfully; database was not rebuilt."
+        )
+
+    idf = _compute_idf(doc["term_freq"] for doc in documents)
+    for doc in documents:
+        vector, norm = _build_weighted_vector(doc["term_freq"], idf)
+        doc["vector"] = vector
+        doc["vector_norm"] = norm
+
+    built_at = datetime.now(timezone.utc).isoformat()
+    checksum = _compute_db_checksum(documents)
+    payload: dict[str, Any] = {
+        "schema_version": CHARTER_DB_SCHEMA_VERSION,
+        "built_at": built_at,
+        "checksum": checksum,
+        "source": {
+            "wg_index_url": WG_INDEX_URL,
+            "wg_about_url_template": WG_ABOUT_URL_TEMPLATE,
+            "wg_documents_url_template": WG_DOCUMENTS_URL_TEMPLATE,
+        },
+        "stats": {
+            "wg_count": len(documents),
+            "term_count": len(idf),
+            "skipped_wgs": len(errors),
+            "documents_fetch_failures": documents_fetch_failures,
+            "deleted_previous": deleted_previous,
+        },
+        "idf": idf,
+        "documents": documents,
+        "errors": errors,
+        "warnings": warnings,
+    }
+    db_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+
+    return RebuildResult(
+        db_path=str(db_path),
+        built_at=built_at,
+        wg_count=len(documents),
+        term_count=len(idf),
+        skipped_wgs=len(errors),
+        deleted_previous=deleted_previous,
+        checksum=checksum,
+    )
+
+
+def get_db_metadata() -> DbMetadata:
+    """Return metadata for the local WG charter vector DB."""
+    db_path = _charter_db_path()
+    if not db_path.exists():
+        return DbMetadata(
+            db_path=str(db_path),
+            exists=False,
+            schema_version=0,
+            built_at="",
+            wg_count=0,
+            term_count=0,
+            skipped_wgs=0,
+            checksum="",
+        )
+
+    payload = _load_charter_db_payload(db_path)
+    stats = payload.get("stats", {})
+    return DbMetadata(
+        db_path=str(db_path),
+        exists=True,
+        schema_version=int(payload.get("schema_version", 0) or 0),
+        built_at=str(payload.get("built_at", "")),
+        wg_count=int(stats.get("wg_count", 0) or 0),
+        term_count=int(stats.get("term_count", 0) or 0),
+        skipped_wgs=int(stats.get("skipped_wgs", 0) or 0),
+        checksum=str(payload.get("checksum", "")),
+    )
+
+
+def resolve_wg_name(user_input: str) -> WgResolutionResult:
+    """Contract-named WG resolution API for acronym/full-name user input."""
+    groups = fetch_working_groups()
+    matched = resolve_working_group(user_input, groups)
+    if matched:
+        return WgResolutionResult(query=user_input, matched=matched, suggestions=[])
+
+    suggestions = suggest_working_groups(user_input, groups, limit=5)
+    return WgResolutionResult(
+        query=user_input,
+        matched=None,
+        suggestions=suggestions,
+    )
+
+
+def suggest_wgs_by_technology(
+    query: str, top_k: int = 10, require_all_terms: bool = True
+) -> list[WgMatch]:
+    """Vector-DB-backed technology query matching for WG suggestions."""
+    if top_k <= 0:
+        return []
+
+    payload = _load_charter_db_payload()
+    documents = payload.get("documents", [])
+    idf = payload.get("idf", {})
+    if not isinstance(documents, list) or not isinstance(idf, dict):
+        raise DatatrackerError("WG charter DB payload missing documents/idf sections.")
+
+    query_freq = _token_frequency(query)
+    if not query_freq:
+        return []
+    query_terms = set(query_freq.keys())
+    query_vector, query_norm = _build_weighted_vector(query_freq, idf)
+
+    scored: list[WgMatch] = []
+    for doc in documents:
+        if not isinstance(doc, dict):
+            continue
+
+        term_freq = doc.get("term_freq", {})
+        if not isinstance(term_freq, dict):
+            continue
+
+        doc_terms = set(str(term) for term in term_freq.keys())
+        overlap = sorted(query_terms & doc_terms)
+        if require_all_terms and not query_terms.issubset(doc_terms):
+            continue
+
+        doc_vector = doc.get("vector", {})
+        if not isinstance(doc_vector, dict):
+            continue
+        doc_norm = float(doc.get("vector_norm", 0.0) or 0.0)
+        score = _cosine_similarity(query_vector, query_norm, doc_vector, doc_norm)
+        if score <= 0.0 and not overlap:
+            continue
+
+        if overlap:
+            justification = (
+                f"Matched terms: {', '.join(overlap)}; vector score={score:.4f}"
+            )
+        else:
+            justification = f"Vector score={score:.4f}"
+
+        scored.append(
+            WgMatch(
+                acronym=str(doc.get("acronym", "")).upper(),
+                name=str(doc.get("name", "")),
+                score=score,
+                justification=justification,
+            )
+        )
+
+    scored.sort(key=lambda item: (-item.score, item.name.lower(), item.acronym.lower()))
+    return scored[:top_k]
 
 
 def fetch_charter_text(acronym: str, timeout: int = 20) -> str:

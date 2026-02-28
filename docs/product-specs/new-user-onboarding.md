@@ -43,10 +43,10 @@ This section is based on repository code + tests review, not live end-to-end exe
 | Upcoming IETF meeting agenda summary (`REQ-FEAT-008`) | Coded | Next meeting metadata + WG agenda summaries implemented. |
 | Last completed IETF meeting summary (`REQ-FEAT-009`) | Coded | Meeting detection + WG minutes summaries implemented. |
 | Draft tracker (`REQ-FEAT-010`) | Not coded | Explicit gap. |
-| Technology onboarding + charter vector DB (`REQ-FEAT-001`, `REQ-VDB-*`, `REQ-MAINT-*`) | Not coded | Explicit gap. |
+| Technology onboarding + charter vector DB (`REQ-FEAT-001`, `REQ-VDB-*`, `REQ-MAINT-*`) | Partially coded | Maintainer DB rebuild/metadata/matching APIs are coded; user-facing onboarding route is still pending. |
 | Webex delivery mode parity (`REQ-MODE-001`) | Not coded | Explicit gap. |
 | Iterative follow-up and always offer Quit (`REQ-INPUT-002`, `REQ-UX-001`) | Partially coded | Current CLI is mostly one-shot menu flow. |
-| Internal API contract naming (`REQ-API-001..006`) | Not coded | Existing function names differ from required API names. |
+| Internal API contract naming (`REQ-API-001..006`) | Partially coded | REQ-API-001/002 baseline names now exist; remaining contract functions are still pending. |
 
 ### 3.2 What Is Implemented in Code Today
 
@@ -72,20 +72,22 @@ Core modules:
   - local subscription persistence
 - `src/ietf_wg_agent/summarizer.py`
   - deterministic text summarization helpers
+- `src/ietf_wg_agent/maintainer.py`
+  - maintainer CLI for vector DB lifecycle + garbage collector checks
 
 ## 4. Tech Debt and Gaps (Actionable)
 
 Tracked in `docs/exec-plans/tech-debt-tracker.md`. Current priorities:
 - High:
-  - `TD-001` technology onboarding + vector DB lifecycle
   - `TD-002` Webex mode parity
   - `TD-003` draft tracker
   - `TD-004` full charter output mode
   - `TD-005` meeting update summaries
 - Medium:
+  - `TD-001` user-facing technology onboarding integration (after DB lifecycle baseline)
   - `TD-006` iterative CLI options + explicit quit path
   - `TD-007` internal API naming contract
-  - `TD-008` maintainer garbage collector
+  - `TD-008` expand garbage collector checks depth
   - `TD-009` parser fixture-based contract tests
 - Low:
   - `TD-010` deeper mailarchive pagination strategy
@@ -160,6 +162,8 @@ Top-level:
 - `AGENTS.md`: engineering process constraints.
 - `SKILLS.md` + `skills/*/SKILL.md`: skill-level behavior docs.
 - `docs/`: product specs, design docs, execution plans, quality/security/reliability docs.
+  - API contract reference: `docs/design-docs/internal-api-contract.md`
+  - Vector DB implementation record: `docs/design-docs/vector-db-implementation-walkthrough.md`
 
 Execution planning:
 - `docs/exec-plans/active/`: current implementation plans.

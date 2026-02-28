@@ -69,6 +69,7 @@ setup(
             "ietf-wg-daily=ietf_wg_agent.daily:main",
             "ietf-wg-daily-updates=ietf_wg_agent.discussion_scheduler:main",
             "ietf-wg-daily-updates-scheduler=ietf_wg_agent.discussion_scheduler:main",
+            "ietf-wg-maintainer=ietf_wg_agent.maintainer:main",
         ]
     },
     cmdclass={

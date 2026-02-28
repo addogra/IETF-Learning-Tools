@@ -79,3 +79,23 @@ Mandatory gate:
 - `REQ-MODE-001` no longer blocked by missing Webex surface.
 - `REQ-INPUT-002` / `REQ-UX-001` satisfied in CLI interaction flow.
 - Remaining lower-priority issues tracked in `tech-debt-tracker.md`.
+
+# Progress Update (2026-02-28)
+- Added maintainer vector DB lifecycle baseline:
+  - `rebuild_wg_charter_db(force_delete_old=True)`
+  - `get_db_metadata()`
+  - local DB payload at `data/wg_charter_vector_db.json`
+- Expanded vector DB corpus to include both `/about/` and `/documents/` text per WG.
+- Added technology matching baseline API:
+  - `suggest_wgs_by_technology(query, top_k=10, require_all_terms=True)`
+- Added contract-named resolution wrapper:
+  - `resolve_wg_name(user_input)`
+- Added maintainer command surface:
+  - `ietf-wg-maintainer rebuild-database`
+  - `ietf-wg-maintainer db-metadata`
+  - `ietf-wg-maintainer garbage-collector`
+- Added tests for new APIs and maintainer command behavior.
+- Remaining in this plan:
+  - user-facing technology onboarding route,
+  - REQ-API-003..006 wrappers,
+  - draft tracker, Webex parity, and CLI iterative UX loop.

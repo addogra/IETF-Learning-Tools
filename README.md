@@ -23,7 +23,7 @@ Implemented:
 - CLI and MCP delivery surfaces for implemented features.
 
 Known requirement gaps:
-- Technology-onboarding vector DB workflow is not yet implemented.
+- Technology-onboarding vector DB now has maintainer lifecycle + matching APIs, but user-facing onboarding flows are not yet wired.
 - Draft tracker feature is not yet implemented.
 - Webex bot delivery mode is not yet implemented.
 - Full (non-truncated) charter output mode is a tracked gap.
@@ -235,6 +235,32 @@ Exposed MCP tools:
 
 - Network access to `https://datatracker.ietf.org` and `https://mailarchive.ietf.org` is required.
 - Subscription data is stored at `~/.ietf_wg_agent_subscriptions.json`.
+
+## Maintainer Knowledge Base Ops
+
+Maintainer-only command surface:
+
+```bash
+ietf-wg-maintainer rebuild-database
+ietf-wg-maintainer db-metadata
+ietf-wg-maintainer garbage-collector
+```
+
+Equivalent module invocation:
+
+```bash
+PYTHONPATH=src python3 -m ietf_wg_agent.maintainer rebuild-database
+```
+
+Vector DB location:
+- `data/wg_charter_vector_db.json`
+- Rebuild corpus includes:
+  - WG about-page charter text (`/wg/<acronym>/about/`)
+  - WG documents-page text (`/wg/<acronym>/documents/`)
+
+API contract documentation:
+- `docs/design-docs/internal-api-contract.md`
+- `docs/design-docs/vector-db-implementation-walkthrough.md`
 
 ## Testing
 
