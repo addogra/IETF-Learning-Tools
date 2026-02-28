@@ -312,10 +312,10 @@ When adding a feature:
 ### Partial or Missing Against Requirements
 - Full charter output mode (non-truncated contract) is not fully exposed.
 - Last-2-meeting updates currently emphasize links over agenda/minutes summaries.
-- User-facing technology-onboarding route is not yet integrated across CLI/MCP/Webex.
-- Draft tracker feature is not implemented.
+- Technology-onboarding route is integrated in CLI/MCP, but Webex parity is pending.
+- Draft tracker API contract is implemented; user-facing CLI/MCP route is pending.
 - Webex delivery mode is not implemented.
-- Normative internal API naming is partially aligned (`REQ-API-001/002` delivered, `REQ-API-003..006` pending wrappers).
+- Normative internal API contract naming (`REQ-API-001..006`) is implemented in `ietf.py`.
 
 Reference:
 - Active plan: `docs/exec-plans/active/2026-02-28-requirements-parity-phase-1.md`

@@ -30,6 +30,7 @@ from ietf_wg_agent.ietf import (
     fetch_wg_discussions_last_months,
     fetch_working_groups,
     resolve_working_group,
+    suggest_wgs_by_technology,
     suggest_working_groups,
 )
 from ietf_wg_agent.summarizer import summarize_charter, summarize_discussions
@@ -118,6 +119,25 @@ if FastMCP is not None:
             lines.append("")
         return "\n".join(lines).strip()
 
+    def _format_technology_matches(
+        query: str,
+        matches: list,
+    ) -> str:
+        lines = [f"Technology onboarding results for '{query}':"]
+        if not matches:
+            lines.append(
+                "- No WG matches found. Rebuild the vector DB and try broader terms."
+            )
+            return "\n".join(lines)
+
+        for idx, match in enumerate(matches, start=1):
+            lines.append(
+                f"{idx}. {match.acronym.upper()} - {match.name} "
+                f"(score={match.score:.4f})"
+            )
+            lines.append(f"   {match.justification}")
+        return "\n".join(lines)
+
     @mcp.tool()
     def find_working_group(query: str) -> str:
         """Resolve acronym/full WG name (e.g. LSR -> Link State Routing)."""
@@ -132,6 +152,21 @@ if FastMCP is not None:
                 lines.append(f"- {candidate.acronym.upper()} - {candidate.name}")
             return "\n".join(lines)
         return f"Matched: {wg.acronym.upper()} - {wg.name}"
+
+    @mcp.tool()
+    def technology_onboarding(
+        query: str, top_k: int = 10, require_all_terms: bool = True
+    ) -> str:
+        """Find relevant working groups from a technology query."""
+        try:
+            matches = suggest_wgs_by_technology(
+                query=query,
+                top_k=top_k,
+                require_all_terms=require_all_terms,
+            )
+        except DatatrackerError as exc:
+            return f"Error: {exc}"
+        return _format_technology_matches(query, matches)
 
     @mcp.tool()
     def summary_of_wg(query: str) -> str:

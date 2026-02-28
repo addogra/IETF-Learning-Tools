@@ -41,6 +41,10 @@ Current checks:
 2. Module design-doc to source-file mapping integrity.
 3. Skill registry path validity (`SKILLS.md` linked files).
 4. Required internal API contract function names in `ietf.py`.
+5. API contract doc status alignment vs implemented code functions.
+6. Entrypoint alignment between `ARCHITECTURE.md`, `pyproject.toml`, and `setup.py`.
+7. Module-doc listing alignment in `docs/design-docs/index.md`.
+8. Vector DB schema-doc token coverage for critical persisted fields.
 
 ## Control Flow
 ```mermaid
@@ -69,5 +73,5 @@ flowchart TD
 - `REQ-MAINT-007`: garbage collector command for inconsistency detection.
 
 ## Known Limitations
-- Garbage collector currently verifies presence and naming contracts, not full semantic architecture rules.
-- API contract checks intentionally report `REQ-API-003..006` missing functions until wrappers are implemented.
+- Semantic checks are deterministic string/contract checks and do not yet validate dynamic runtime behavior.
+- Deep architectural invariants (for example parser complexity budgets or source-level layering rules) are not yet enforced.

@@ -17,18 +17,21 @@ from ietf_wg_agent.ietf import (
     DatatrackerError,
     DiscussionPost,
     DraftInfo,
-    MeetingUpdate,
     LastMeetingItem,
+    MeetingUpdate,
     UpcomingAgendaItem,
+    WgMatch,
+    WorkingGroup,
     fetch_charter_text,
     fetch_summary_of_last_ietf_meeting,
-    fetch_upcoming_ietf_agenda,
     fetch_top_active_drafts,
+    fetch_upcoming_ietf_agenda,
     fetch_updates_from_last_two_meetings,
     fetch_wg_discussions_last_day,
     fetch_wg_discussions_last_months,
     fetch_working_groups,
     resolve_working_group,
+    suggest_wgs_by_technology,
     suggest_working_groups,
 )
 from ietf_wg_agent.summarizer import summarize_charter, summarize_discussions
@@ -116,6 +119,23 @@ def _format_last_ietf_meeting_summary(header: str, items: list[LastMeetingItem])
     return "\n".join(lines).strip()
 
 
+def _format_technology_matches(query: str, matches: list[WgMatch]) -> str:
+    lines = [f"Technology onboarding results for '{query}':"]
+    if not matches:
+        lines.append(
+            "- No WG matches found. Rebuild the vector DB and try broader terms."
+        )
+        return "\n".join(lines)
+
+    for idx, match in enumerate(matches, start=1):
+        lines.append(
+            f"{idx}. {match.acronym.upper()} - {match.name} "
+            f"(score={match.score:.4f})"
+        )
+        lines.append(f"   {match.justification}")
+    return "\n".join(lines)
+
+
 def _start_daily_updates_scheduler() -> str:
     cmd = shutil.which("ietf-wg-daily-updates-scheduler")
     if not cmd:
@@ -148,7 +168,10 @@ def main() -> None:
         print("Invalid email. Please enter a valid email address.")
         return
 
-    wg_input = input("Working Group Name (full name or short form, e.g. LSR): ").strip()
+    wg_input = input(
+        "Working Group Name (full name or short form, e.g. LSR) "
+        "or type 'tech': "
+    ).strip()
 
     if not wg_input:
         print("No working group value supplied.")
@@ -157,19 +180,27 @@ def main() -> None:
     try:
         # Section 2: WG resolution and typo-suggestion disambiguation.
         groups = fetch_working_groups()
-        wg = resolve_working_group(wg_input, groups)
-        if not wg:
-            suggestions = suggest_working_groups(wg_input, groups, limit=5)
-            if not suggestions:
-                print(f"No WG found for input: {wg_input}")
+        wg: WorkingGroup
+        if wg_input.lower() == "tech":
+            tech_query = input(
+                "Technology query (example: bgp-ls flex-algo): "
+            ).strip()
+            if not tech_query:
+                print("No technology query supplied.")
                 return
 
-            print(f"No exact WG found for '{wg_input}'. Did you mean:")
-            for idx, candidate in enumerate(suggestions, start=1):
-                print(f"{idx}. {candidate.acronym.upper()} - {candidate.name}")
+            matches = suggest_wgs_by_technology(
+                tech_query,
+                top_k=10,
+                require_all_terms=True,
+            )
+            print(_format_technology_matches(tech_query, matches))
+            if not matches:
+                return
 
             choice = input(
-                f"Select 1-{len(suggestions)} to continue, or press Enter to cancel: "
+                f"Select 1-{len(matches)} to continue with a WG, "
+                "or press Enter to cancel: "
             ).strip()
             if not choice:
                 print("Cancelled.")
@@ -179,11 +210,43 @@ def main() -> None:
                 return
 
             selection = int(choice)
-            if selection < 1 or selection > len(suggestions):
+            if selection < 1 or selection > len(matches):
                 print("Invalid choice.")
                 return
-            wg = suggestions[selection - 1]
+            selected = matches[selection - 1]
+            wg = WorkingGroup(
+                acronym=selected.acronym.lower(),
+                name=selected.name,
+            )
             print(f"Selected WG: {wg.acronym.upper()} - {wg.name}")
+        else:
+            wg = resolve_working_group(wg_input, groups)
+            if not wg:
+                suggestions = suggest_working_groups(wg_input, groups, limit=5)
+                if not suggestions:
+                    print(f"No WG found for input: {wg_input}")
+                    return
+
+                print(f"No exact WG found for '{wg_input}'. Did you mean:")
+                for idx, candidate in enumerate(suggestions, start=1):
+                    print(f"{idx}. {candidate.acronym.upper()} - {candidate.name}")
+
+                choice = input(
+                    f"Select 1-{len(suggestions)} to continue, or press Enter to cancel: "
+                ).strip()
+                if not choice:
+                    print("Cancelled.")
+                    return
+                if not choice.isdigit():
+                    print("Invalid choice.")
+                    return
+
+                selection = int(choice)
+                if selection < 1 or selection > len(suggestions):
+                    print("Invalid choice.")
+                    return
+                wg = suggestions[selection - 1]
+                print(f"Selected WG: {wg.acronym.upper()} - {wg.name}")
 
         print(f"Matched WG: {wg.acronym.upper()} - {wg.name}")
 

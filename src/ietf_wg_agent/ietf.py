@@ -19,10 +19,14 @@ import json
 import math
 from pathlib import Path
 import re
+import shutil
+import subprocess
+import sys
 from typing import Any, Iterable, Optional
 
 import requests
 from bs4 import BeautifulSoup
+from ietf_wg_agent.summarizer import summarize_discussions
 
 WG_INDEX_URL = "https://datatracker.ietf.org/wg/"
 WG_API_URL = "https://datatracker.ietf.org/api/v1/group/group/"
@@ -128,6 +132,98 @@ class WgResolutionResult:
     query: str
     matched: Optional[WorkingGroup]
     suggestions: list[WorkingGroup]
+
+
+@dataclass(frozen=True)
+class CharterResult:
+    wg_id: str
+    wg_name: str
+    charter_text: str
+    source_url: str
+
+
+@dataclass(frozen=True)
+class DraftResult:
+    identifier: str
+    title: str
+    status: str
+    abstract: str
+    url: str
+
+
+@dataclass(frozen=True)
+class DiscussionSummary:
+    wg_id: str
+    wg_name: str
+    window_days: int
+    post_count: int
+    summary: str
+    posts: list[DiscussionPost]
+
+
+@dataclass(frozen=True)
+class MeetingUpdates:
+    wg_id: str
+    wg_name: str
+    updates: list[MeetingUpdate]
+    source_url: str
+
+
+@dataclass(frozen=True)
+class UpcomingMeetingSummary:
+    header: str
+    items: list[UpcomingAgendaItem]
+
+
+@dataclass(frozen=True)
+class LastMeetingSummary:
+    header: str
+    items: list[LastMeetingItem]
+
+
+@dataclass(frozen=True)
+class DraftTrackerResult:
+    identifier: str
+    canonical_identifier: str
+    found: bool
+    title: str
+    status: str
+    abstract: str
+    doc_type: str
+    url: str
+    include_vendor_signals: bool
+    vendor_signals: list[str]
+    message: str
+
+
+@dataclass(frozen=True)
+class SubscriptionConfig:
+    user_id: str
+    wg_id: str
+    start_scheduler: bool = False
+    interval_hours: int = 24
+
+
+@dataclass(frozen=True)
+class SchedulerResult:
+    user_id: str
+    wg_id: str
+    registered: bool
+    scheduler_started: bool
+    scheduler_command: str
+    message: str
+
+
+@dataclass(frozen=True)
+class DailyUpdateResult:
+    wg_id: str
+    wg_name: str
+    window_days: int
+    post_count: int
+    summary: str
+    notify_requested: bool
+    notified_recipients: int
+    notification_errors: list[str]
 
 
 class DatatrackerError(RuntimeError):
@@ -680,6 +776,324 @@ def suggest_wgs_by_technology(
 
     scored.sort(key=lambda item: (-item.score, item.name.lower(), item.acronym.lower()))
     return scored[:top_k]
+
+
+def _resolve_wg_or_raise(wg_id: str) -> WorkingGroup:
+    groups = fetch_working_groups()
+    wg = resolve_working_group(wg_id, groups)
+    if wg:
+        return wg
+
+    suggestions = suggest_working_groups(wg_id, groups, limit=5)
+    if suggestions:
+        hint = ", ".join(f"{item.acronym.upper()} ({item.name})" for item in suggestions)
+        raise DatatrackerError(f"Unable to resolve WG '{wg_id}'. Suggestions: {hint}")
+    raise DatatrackerError(f"Unable to resolve WG '{wg_id}'.")
+
+
+def _filter_posts_by_window_days(
+    posts: Iterable[DiscussionPost], window_days: int
+) -> list[DiscussionPost]:
+    cutoff = datetime.utcnow() - timedelta(days=max(1, window_days))
+    filtered: list[DiscussionPost] = []
+    for post in posts:
+        dt = _parse_mailarchive_date(post.date)
+        if dt is None:
+            filtered.append(post)
+            continue
+        if _to_utc_naive(dt) >= cutoff:
+            filtered.append(post)
+    return filtered
+
+
+def _start_daily_updates_scheduler(interval_hours: int = 24) -> tuple[bool, str, str]:
+    cmd = shutil.which("ietf-wg-daily-updates-scheduler")
+    if not cmd:
+        return False, "", (
+            "Scheduler command not found. Run manually: "
+            "ietf-wg-daily-updates-scheduler"
+        )
+
+    argv = [cmd]
+    if interval_hours != 24:
+        argv.extend(["--interval-hours", str(max(1, interval_hours))])
+
+    kwargs: dict[str, Any] = {
+        "stdout": subprocess.DEVNULL,
+        "stderr": subprocess.DEVNULL,
+    }
+    if sys.platform != "win32":
+        kwargs["start_new_session"] = True
+
+    try:
+        proc = subprocess.Popen(argv, **kwargs)
+        return True, cmd, f"Scheduler started (pid={proc.pid})."
+    except Exception as exc:  # pragma: no cover - platform/process edge cases
+        return False, cmd, f"Unable to start scheduler automatically: {exc}"
+
+
+def _normalize_doc_identifier(identifier: str) -> str:
+    value = identifier.strip().lower()
+    if not value:
+        return ""
+
+    value = re.sub(r"^https?://datatracker\.ietf\.org/doc/", "", value)
+    value = value.strip("/")
+    if value.isdigit():
+        return f"rfc{value}"
+    if value.startswith("rfc"):
+        digits = re.sub(r"[^0-9]", "", value[3:])
+        return f"rfc{digits}" if digits else value
+    return value
+
+
+def _doc_states_to_text(item: dict[str, Any]) -> str:
+    raw_states = item.get("states")
+    if isinstance(raw_states, list):
+        states = [str(state).strip() for state in raw_states if str(state).strip()]
+        if states:
+            return ", ".join(states)
+    if isinstance(raw_states, str) and raw_states.strip():
+        return raw_states.strip()
+    std_level = str(item.get("std_level", "")).strip()
+    if std_level:
+        return std_level
+    return "Status not found."
+
+
+def get_wg_charter(wg_id: str) -> CharterResult:
+    """Contract wrapper for fetching complete WG charter content."""
+    wg = _resolve_wg_or_raise(wg_id)
+    charter_text = fetch_charter_text(wg.acronym)
+    return CharterResult(
+        wg_id=wg.acronym,
+        wg_name=wg.name,
+        charter_text=charter_text,
+        source_url=WG_ABOUT_URL_TEMPLATE.format(acronym=wg.acronym.lower()),
+    )
+
+
+def get_wg_active_drafts(wg_id: str, limit: int = 5) -> list[DraftResult]:
+    """Contract wrapper for fetching top active WG drafts."""
+    wg = _resolve_wg_or_raise(wg_id)
+    drafts = fetch_top_active_drafts(wg.acronym, limit=max(1, limit))
+    return [
+        DraftResult(
+            identifier=draft.name,
+            title=draft.title,
+            status=draft.status,
+            abstract=draft.abstract,
+            url=draft.url,
+        )
+        for draft in drafts
+    ]
+
+
+def get_wg_discussion_summary(
+    wg_id: str, window_days: int = 90
+) -> DiscussionSummary:
+    """Contract wrapper for WG discussion summary over a day-window."""
+    wg = _resolve_wg_or_raise(wg_id)
+    days = max(1, window_days)
+    months = max(1, math.ceil(days / 30))
+    posts = fetch_wg_discussions_last_months(wg.acronym, months=months)
+    filtered = _filter_posts_by_window_days(posts, window_days=days)
+    summary = summarize_discussions(
+        filtered,
+        max_subjects=5,
+        period_label=f"last {days} days",
+    )
+    return DiscussionSummary(
+        wg_id=wg.acronym,
+        wg_name=wg.name,
+        window_days=days,
+        post_count=len(filtered),
+        summary=summary,
+        posts=filtered,
+    )
+
+
+def get_wg_last_two_meeting_updates(wg_id: str) -> MeetingUpdates:
+    """Contract wrapper for WG last-two-meetings updates."""
+    wg = _resolve_wg_or_raise(wg_id)
+    updates = fetch_updates_from_last_two_meetings(wg.acronym, limit=2)
+    return MeetingUpdates(
+        wg_id=wg.acronym,
+        wg_name=wg.name,
+        updates=updates,
+        source_url=WG_MEETINGS_URL_TEMPLATE.format(acronym=wg.acronym.lower()),
+    )
+
+
+def get_upcoming_ietf_agenda_summary() -> UpcomingMeetingSummary:
+    """Contract wrapper for upcoming IETF agenda summary."""
+    groups = fetch_working_groups()
+    header, items = fetch_upcoming_ietf_agenda(groups)
+    return UpcomingMeetingSummary(header=header, items=items)
+
+
+def get_last_ietf_meeting_summary() -> LastMeetingSummary:
+    """Contract wrapper for last completed IETF meeting summary."""
+    groups = fetch_working_groups()
+    header, items = fetch_summary_of_last_ietf_meeting(groups)
+    return LastMeetingSummary(header=header, items=items)
+
+
+def track_draft_or_rfc(
+    identifier: str, include_vendor_signals: bool = False
+) -> DraftTrackerResult:
+    """Track a draft/RFC and return normalized Datatracker metadata."""
+    canonical = _normalize_doc_identifier(identifier)
+    if not canonical:
+        return DraftTrackerResult(
+            identifier=identifier,
+            canonical_identifier="",
+            found=False,
+            title="",
+            status="",
+            abstract="",
+            doc_type="",
+            url="",
+            include_vendor_signals=include_vendor_signals,
+            vendor_signals=[],
+            message="No identifier supplied.",
+        )
+
+    params = {"name": canonical}
+    try:
+        response = requests.get(DOC_API_URL, params=params, timeout=20)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise DatatrackerError(f"Unable to track identifier '{identifier}': {exc}") from exc
+
+    payload = response.json()
+    objects = payload.get("objects", [])
+    if not objects:
+        return DraftTrackerResult(
+            identifier=identifier,
+            canonical_identifier=canonical,
+            found=False,
+            title="",
+            status="",
+            abstract="",
+            doc_type="",
+            url=f"https://datatracker.ietf.org/doc/{canonical}/",
+            include_vendor_signals=include_vendor_signals,
+            vendor_signals=[],
+            message=f"No Datatracker document found for '{canonical}'.",
+        )
+
+    item = objects[0]
+    name = str(item.get("name", canonical)).strip().lower()
+    title = str(item.get("title", "")).strip()
+    abstract = str(item.get("abstract", "")).strip()
+    status = _doc_states_to_text(item)
+    doc_type = "RFC" if name.startswith("rfc") else "Draft"
+    vendor_signals: list[str] = []
+    if include_vendor_signals:
+        vendor_signals.append("Vendor signal integration is not implemented yet.")
+
+    return DraftTrackerResult(
+        identifier=identifier,
+        canonical_identifier=name,
+        found=True,
+        title=title or "Title not found.",
+        status=status,
+        abstract=abstract or "Abstract not found.",
+        doc_type=doc_type,
+        url=f"https://datatracker.ietf.org/doc/{name}/",
+        include_vendor_signals=include_vendor_signals,
+        vendor_signals=vendor_signals,
+        message="Tracked via Datatracker API.",
+    )
+
+
+def run_daily_wg_update(wg_id: str, notify: bool = True) -> DailyUpdateResult:
+    """Run one WG-scoped daily discussion update summary and optional notifications."""
+    summary = get_wg_discussion_summary(wg_id=wg_id, window_days=1)
+    errors: list[str] = []
+    notified_recipients = 0
+
+    if notify and summary.post_count > 0:
+        from ietf_wg_agent.notifier import load_smtp_config, send_email
+        from ietf_wg_agent.subscriptions import list_subscriptions
+
+        recipients = sorted(
+            {
+                sub.user_id
+                for sub in list_subscriptions()
+                if sub.acronym.lower() == summary.wg_id.lower() and "@" in sub.user_id
+            }
+        )
+        if recipients:
+            try:
+                smtp = load_smtp_config()
+                for recipient in recipients:
+                    body = "\n".join(
+                        [
+                            f"IETF WG Daily Discussion Updates - {date_cls.today().isoformat()}",
+                            f"Recipient: {recipient}",
+                            "",
+                            f"WG: {summary.wg_id.upper()}",
+                            summary.summary,
+                        ]
+                    )
+                    send_email(
+                        to_email=recipient,
+                        subject=(
+                            f"IETF WG Daily Discussion Updates - "
+                            f"{summary.wg_id.upper()}"
+                        ),
+                        body=body,
+                        config=smtp,
+                    )
+                    notified_recipients += 1
+            except Exception as exc:  # pragma: no cover - SMTP env-dependent
+                errors.append(str(exc))
+
+    return DailyUpdateResult(
+        wg_id=summary.wg_id,
+        wg_name=summary.wg_name,
+        window_days=summary.window_days,
+        post_count=summary.post_count,
+        summary=summary.summary,
+        notify_requested=notify,
+        notified_recipients=notified_recipients,
+        notification_errors=errors,
+    )
+
+
+def schedule_daily_updates(subscription: SubscriptionConfig) -> SchedulerResult:
+    """Register WG daily updates and optionally start scheduler process."""
+    user_id = subscription.user_id.strip()
+    if not user_id:
+        raise DatatrackerError("Subscription user_id is required.")
+
+    wg = _resolve_wg_or_raise(subscription.wg_id)
+
+    from ietf_wg_agent.subscriptions import register_daily_update
+
+    register_daily_update(user_id=user_id, acronym=wg.acronym)
+
+    started = False
+    command = "ietf-wg-daily-updates-scheduler"
+    message = "Daily updates registered."
+    if subscription.start_scheduler:
+        started, cmd_path, start_message = _start_daily_updates_scheduler(
+            interval_hours=subscription.interval_hours
+        )
+        if cmd_path:
+            command = cmd_path
+        message = start_message
+
+    return SchedulerResult(
+        user_id=user_id,
+        wg_id=wg.acronym,
+        registered=True,
+        scheduler_started=started,
+        scheduler_command=command,
+        message=message,
+    )
 
 
 def fetch_charter_text(acronym: str, timeout: int = 20) -> str:

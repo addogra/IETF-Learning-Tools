@@ -59,6 +59,7 @@ def test_server_registers_and_runs_with_fake_mcp():
 
     expected_tools = {
         "find_working_group",
+        "technology_onboarding",
         "summary_of_wg",
         "register_wg_daily_update",
         "active_drafts_and_recent_rfcs",

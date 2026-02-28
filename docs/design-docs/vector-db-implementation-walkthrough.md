@@ -188,9 +188,9 @@ Test run:
 | `tests/test_maintainer.py` | `test_run_garbage_collector_passes_on_empty_requirements` | GC pass behavior when constraints are satisfied. |
 
 ## 8. Known Gaps After This Slice
-- User-facing technology onboarding route across CLI/MCP is pending (`TD-001`).
-- Required API wrappers for REQ-API-003..006 are pending (`TD-007`, `TD-003`).
-- Garbage collector currently enforces baseline contract presence, not deep semantic architecture constraints (`TD-008`).
+- Draft tracker user-facing CLI/MCP route is pending (`TD-003`).
+- Webex delivery mode parity remains pending (`TD-002`).
+- Full charter output mode and richer meeting summaries are still pending (`TD-004`, `TD-005`).
 
 ## 9. Related Docs
 - `docs/design-docs/internal-api-contract.md`

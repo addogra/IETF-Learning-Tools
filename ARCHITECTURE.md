@@ -65,8 +65,8 @@ Implemented:
 - Daily email delivery with skip-if-no-update behavior.
 
 Tracked gaps:
-- User-facing technology-onboarding flow integration across CLI/MCP/Webex.
-- Draft tracker.
+- Technology-onboarding flow remains to be added for Webex parity.
+- Draft tracker user-facing integration (CLI/MCP route) remains pending.
 - Webex delivery surface parity.
 - Full charter output mode (non-summary path).
 - Meeting update summaries for agenda/minutes content.

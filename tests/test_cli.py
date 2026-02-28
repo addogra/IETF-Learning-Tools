@@ -5,6 +5,7 @@ from ietf_wg_agent.ietf import (
     LastMeetingItem,
     MeetingUpdate,
     UpcomingAgendaItem,
+    WgMatch,
     WorkingGroup,
 )
 
@@ -342,3 +343,42 @@ def test_cli_option_7_last_meeting_summary_flow(monkeypatch, capsys):
     assert "Working Group Link State Routing (LSR)" in out
     assert "Reviewed milestones and progressed two drafts." in out
     assert calls == []
+
+
+def test_cli_technology_onboarding_flow(monkeypatch, capsys):
+    wg = WorkingGroup(acronym="lsr", name="Link State Routing")
+
+    _feed_inputs(
+        monkeypatch,
+        [
+            "user@example.com",      # email
+            "tech",                  # onboarding mode trigger
+            "bgp-ls flex-algo",      # technology query
+            "1",                     # select top match
+            "1",                     # option
+        ],
+    )
+
+    monkeypatch.setattr(cli, "fetch_working_groups", lambda: [wg])
+    monkeypatch.setattr(
+        cli,
+        "suggest_wgs_by_technology",
+        lambda _query, top_k=10, require_all_terms=True: [
+            WgMatch(
+                acronym="LSR",
+                name="Link State Routing",
+                score=0.93,
+                justification="Matched terms: bgp, flex, algo",
+            )
+        ],
+    )
+    monkeypatch.setattr(cli, "fetch_charter_text", lambda _ac: "charter text")
+    monkeypatch.setattr(cli, "summarize_charter", lambda _txt: "summary output")
+
+    cli.main()
+    out = capsys.readouterr().out
+
+    assert "Technology onboarding results for 'bgp-ls flex-algo':" in out
+    assert "1. LSR - Link State Routing (score=0.9300)" in out
+    assert "Selected WG: LSR - Link State Routing" in out
+    assert "summary output" in out

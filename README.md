@@ -23,8 +23,7 @@ Implemented:
 - CLI and MCP delivery surfaces for implemented features.
 
 Known requirement gaps:
-- Technology-onboarding vector DB now has maintainer lifecycle + matching APIs, but user-facing onboarding flows are not yet wired.
-- Draft tracker feature is not yet implemented.
+- Draft tracker user-facing route is not yet exposed in CLI/MCP, but API wrapper is implemented.
 - Webex bot delivery mode is not yet implemented.
 - Full (non-truncated) charter output mode is a tracked gap.
 - Last-2-meeting response currently favors links over agenda/minutes summaries.
@@ -32,6 +31,7 @@ Known requirement gaps:
 ## What it does
 
 - Accepts a WG input in short form or full name (example: `LSR` or `Link State Routing`).
+- Supports technology onboarding in CLI by entering `tech` at WG prompt.
 - Resolves the WG via IETF Datatracker.
 - Provides the option `Summary of WG` by fetching the charter from Datatracker and summarizing it.
 - Allows registering WG subscriptions for daily summaries.
@@ -217,6 +217,7 @@ If you used the seamless setup on Python 3.9, activate `.venv-mcp` first.
 Exposed MCP tools:
 
 - `find_working_group(query)`
+- `technology_onboarding(query, top_k=10, require_all_terms=True)`
 - `summary_of_wg(query)`
 - `register_wg_daily_update(user_id, query)`
 - `active_drafts_and_recent_rfcs(query)`

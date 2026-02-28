@@ -78,6 +78,104 @@ def _extract_skill_paths(skills_index_text: str) -> list[str]:
     return paths
 
 
+def _check_api_contract_doc_alignment(
+    repo_root: Path, api_presence: dict[str, bool]
+) -> list[str]:
+    issues: list[str] = []
+    rel = "docs/design-docs/internal-api-contract.md"
+    path = repo_root / rel
+    if not path.exists():
+        return [f"Missing API contract doc: {rel}"]
+
+    text = path.read_text(encoding="utf-8")
+    for name, present in api_presence.items():
+        pattern = re.compile(
+            rf"\|[^|\n]*\|\s*`{re.escape(name)}`\s*\|[^|\n]*\|\s*(Implemented|Pending)\s*\|",
+            flags=re.IGNORECASE,
+        )
+        match = pattern.search(text)
+        if not match:
+            issues.append(f"API contract doc missing row for function: {name}")
+            continue
+
+        status = match.group(1).strip().lower()
+        if present and status != "implemented":
+            issues.append(
+                f"API contract doc status mismatch for {name}: "
+                "code=implemented doc!=Implemented"
+            )
+        if not present and status == "implemented":
+            issues.append(
+                f"API contract doc status mismatch for {name}: "
+                "code=missing doc=Implemented"
+            )
+    return issues
+
+
+def _check_entrypoint_alignment(repo_root: Path) -> list[str]:
+    issues: list[str] = []
+    architecture = repo_root / "ARCHITECTURE.md"
+    pyproject = repo_root / "pyproject.toml"
+    setup_py = repo_root / "setup.py"
+
+    for rel, path in (
+        ("ARCHITECTURE.md", architecture),
+        ("pyproject.toml", pyproject),
+        ("setup.py", setup_py),
+    ):
+        if not path.exists():
+            issues.append(f"Missing entrypoint contract file: {rel}")
+            return issues
+
+    arch_text = architecture.read_text(encoding="utf-8")
+    pyproject_text = pyproject.read_text(encoding="utf-8")
+    setup_text = setup_py.read_text(encoding="utf-8")
+    commands = sorted(set(re.findall(r"`(ietf-wg-[a-z0-9-]+)`", arch_text)))
+
+    for cmd in commands:
+        if cmd not in pyproject_text:
+            issues.append(f"Entrypoint missing in pyproject.toml: {cmd}")
+        if cmd not in setup_text:
+            issues.append(f"Entrypoint missing in setup.py: {cmd}")
+    return issues
+
+
+def _check_module_index_alignment(repo_root: Path) -> list[str]:
+    rel = "docs/design-docs/index.md"
+    path = repo_root / rel
+    if not path.exists():
+        return [f"Missing design-doc index: {rel}"]
+
+    text = path.read_text(encoding="utf-8")
+    issues: list[str] = []
+    for doc_rel in _module_doc_to_source_relpaths():
+        short_rel = doc_rel.replace("docs/design-docs/", "")
+        if short_rel not in text:
+            issues.append(f"Module doc missing from design-doc index: {short_rel}")
+    return issues
+
+
+def _check_vector_db_schema_contract(repo_root: Path) -> list[str]:
+    rel = "docs/generated/db-schema.md"
+    path = repo_root / rel
+    if not path.exists():
+        return [f"Missing vector DB schema doc: {rel}"]
+
+    text = path.read_text(encoding="utf-8")
+    required_tokens = [
+        '"wg_documents_url_template"',
+        '"documents_text"',
+        '"documents_fetch_failures"',
+        '"deleted_previous"',
+    ]
+
+    issues: list[str] = []
+    for token in required_tokens:
+        if token not in text:
+            issues.append(f"Vector DB schema doc missing token: {token}")
+    return issues
+
+
 def run_garbage_collector(root: Optional[Path] = None) -> str:
     """Run deterministic repository hygiene checks for maintainers."""
     repo_root = root or _project_root()
@@ -105,20 +203,32 @@ def run_garbage_collector(root: Optional[Path] = None) -> str:
         skills_issues.append("Missing SKILLS.md")
 
     api_issues: list[str] = []
+    api_presence: dict[str, bool] = {}
     ietf_source = repo_root / "src/ietf_wg_agent/ietf.py"
     if ietf_source.exists():
         text = ietf_source.read_text(encoding="utf-8")
         for name in _required_api_contract_names():
-            if not re.search(rf"def\s+{re.escape(name)}\s*\(", text):
+            present = bool(re.search(rf"def\s+{re.escape(name)}\s*\(", text))
+            api_presence[name] = present
+            if not present:
                 api_issues.append(f"Missing API contract function: {name}")
     else:
         api_issues.append("Missing src/ietf_wg_agent/ietf.py")
+        for name in _required_api_contract_names():
+            api_presence[name] = False
+
+    semantic_issues: list[str] = []
+    semantic_issues.extend(_check_api_contract_doc_alignment(repo_root, api_presence))
+    semantic_issues.extend(_check_entrypoint_alignment(repo_root))
+    semantic_issues.extend(_check_module_index_alignment(repo_root))
+    semantic_issues.extend(_check_vector_db_schema_contract(repo_root))
 
     total_issues = (
         len(missing_artifacts)
         + len(mapping_issues)
         + len(skills_issues)
         + len(api_issues)
+        + len(semantic_issues)
     )
 
     lines: list[str] = []
@@ -135,6 +245,7 @@ def run_garbage_collector(root: Optional[Path] = None) -> str:
     lines.append(f"- Module doc/source mapping issues: {len(mapping_issues)}")
     lines.append(f"- Skill registry issues: {len(skills_issues)}")
     lines.append(f"- API contract issues: {len(api_issues)}")
+    lines.append(f"- Semantic consistency issues: {len(semantic_issues)}")
     lines.append("")
 
     if total_issues == 0:
@@ -158,6 +269,10 @@ def run_garbage_collector(root: Optional[Path] = None) -> str:
         lines.append("")
         lines.append("API Contract Issues:")
         lines.extend(f"- {item}" for item in api_issues)
+    if semantic_issues:
+        lines.append("")
+        lines.append("Semantic Consistency Issues:")
+        lines.extend(f"- {item}" for item in semantic_issues)
 
     return "\n".join(lines)
 

@@ -2,21 +2,22 @@
 # Tech Debt Tracker
 
 ## Open Items
-- `TD-001` (Medium) - User-facing technology onboarding remains incomplete
-  - Requirement refs: `REQ-FEAT-001`, `REQ-MAINT-001..006`, `REQ-VDB-001..003`, `REQ-API-001/002`
-  - Progress: maintainer DB lifecycle + local vector matching APIs implemented (`rebuild_wg_charter_db`, `get_db_metadata`, `suggest_wgs_by_technology`).
-  - Gap: no CLI/MCP technology-input onboarding flow yet.
-  - Next action: wire technology-input route and response formatting across delivery modes.
+- `TD-001` (Low) - Technology onboarding parity is incomplete for Webex
+  - Requirement refs: `REQ-FEAT-001`, `REQ-MAINT-001..006`, `REQ-VDB-001..003`, `REQ-MODE-001`
+  - Progress: maintainer DB lifecycle, contract wrappers, and technology onboarding route are implemented in CLI/MCP.
+  - Gap: no Webex technology-onboarding interaction path yet.
+  - Next action: expose technology onboarding command in Webex adapter when delivery mode is added.
 
 - `TD-002` (High) - Missing delivery-mode parity for Webex bot
   - Requirement refs: `REQ-MODE-001`, `REQ-MODE-002`
   - Gap: current implementation exposes CLI + MCP + daily scheduler, but no Webex command surface.
   - Next action: add Webex adapter/command mapping with parity tests.
 
-- `TD-003` (High) - Draft tracker not implemented
+- `TD-003` (Medium) - Draft tracker user-facing route is incomplete
   - Requirement refs: `REQ-FEAT-010`, `REQ-API-005`
-  - Gap: no RFC/draft history timeline tool and no related context aggregation.
-  - Next action: add `track_draft_or_rfc` API + CLI/MCP entrypoints.
+  - Progress: `track_draft_or_rfc(identifier, include_vendor_signals=False)` API wrapper is implemented.
+  - Gap: no dedicated CLI/MCP command path for draft tracking and timeline rendering yet.
+  - Next action: add CLI/MCP surfaces for draft tracker output formatting.
 
 - `TD-004` (High) - Charter output contract mismatch
   - Requirement refs: `REQ-FEAT-003`
@@ -33,17 +34,11 @@
   - Gap: CLI runs one-shot option flow; no iterative follow-up/quit prompt after each action.
   - Next action: introduce looped post-action menu with explicit `Quit`.
 
-- `TD-007` (Medium) - Normative internal API names missing
-  - Requirement refs: `REQ-API-001..006`
-  - Progress: REQ-API-001/002 names are now present.
-  - Gap: REQ-API-003..006 contract names are still missing.
-  - Next action: add remaining contract-named wrappers/facade and migration notes.
-
 - `TD-008` (Low) - Garbage collector depth is limited
   - Requirement refs: `REQ-MAINT-007`
-  - Progress: `ietf-wg-maintainer garbage-collector` command now exists with artifact/mapping/API checks.
-  - Gap: checks do not yet cover deeper semantic drift rules.
-  - Next action: expand rule set and severity model for architectural constraints.
+  - Progress: garbage collector now includes semantic checks (API-doc alignment, entrypoint alignment, module-index alignment, schema token checks).
+  - Gap: dynamic runtime invariants and deeper architectural rules are not yet enforced.
+  - Next action: add runtime-oriented semantic checks and severity classes.
 
 - `TD-009` (Medium) - Parser resilience needs fixture-backed contract tests
   - Requirement refs: `REQ-DATA-001`, `REQ-REL-001`

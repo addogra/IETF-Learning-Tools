@@ -27,17 +27,15 @@ Implemented:
 - `get_db_metadata() -> DbMetadata`
 - `resolve_wg_name(user_input) -> WgResolutionResult`
 - `suggest_wgs_by_technology(query, top_k=10, require_all_terms=True) -> list[WgMatch]`
-
-Pending wrappers (required names not yet implemented):
-- `get_wg_charter`
-- `get_wg_active_drafts`
-- `get_wg_discussion_summary`
-- `get_wg_last_two_meeting_updates`
-- `get_upcoming_ietf_agenda_summary`
-- `get_last_ietf_meeting_summary`
-- `track_draft_or_rfc`
-- `run_daily_wg_update`
-- `schedule_daily_updates`
+- `get_wg_charter(wg_id) -> CharterResult`
+- `get_wg_active_drafts(wg_id, limit=5) -> list[DraftResult]`
+- `get_wg_discussion_summary(wg_id, window_days=90) -> DiscussionSummary`
+- `get_wg_last_two_meeting_updates(wg_id) -> MeetingUpdates`
+- `get_upcoming_ietf_agenda_summary() -> UpcomingMeetingSummary`
+- `get_last_ietf_meeting_summary() -> LastMeetingSummary`
+- `track_draft_or_rfc(identifier, include_vendor_signals=False) -> DraftTrackerResult`
+- `run_daily_wg_update(wg_id, notify=True) -> DailyUpdateResult`
+- `schedule_daily_updates(subscription) -> SchedulerResult`
 
 Detailed matrix and status: `docs/design-docs/internal-api-contract.md`
 

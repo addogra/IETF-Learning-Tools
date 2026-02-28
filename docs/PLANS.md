@@ -13,11 +13,12 @@
   - Outcome: code/test audit mapped to requirement coverage and open gaps.
 - `docs/exec-plans/completed/2026-02-28-vector-db-maintainer-baseline.md`
   - Outcome: maintainer vector DB lifecycle + contract API baseline + garbage collector command + `/documents/` corpus ingestion.
+- `docs/exec-plans/completed/2026-02-28-api-parity-onboarding-gc-hardening.md`
+  - Outcome: REQ-API-003..006 wrappers + CLI/MCP technology onboarding + semantic garbage-collector checks.
 
 ## Near-Term Priorities
 
-1. Wire user-facing technology onboarding route on top of the new charter vector DB lifecycle.
-2. Implement draft tracker API + CLI/MCP surfaces.
-3. Add full charter output path and meeting summary enrichment.
-4. Add Webex adapter scaffold for delivery-mode parity.
-5. Strengthen parser contract tests with captured fixtures.
+1. Add draft tracker CLI/MCP user-facing route on top of `track_draft_or_rfc`.
+2. Add full charter output path and meeting summary enrichment.
+3. Add Webex adapter scaffold for delivery-mode parity.
+4. Strengthen parser contract tests with captured fixtures.

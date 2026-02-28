@@ -9,13 +9,11 @@ Close the highest-impact gaps between `requirements.txt` and the current impleme
 The codebase already implements core WG resolution, charter/draft/discussion retrieval, meeting views, MCP tool exposure, and daily email delivery. However, several normative requirements remain unimplemented or partially implemented.
 
 Primary uncovered requirement clusters:
-- `REQ-FEAT-001`, `REQ-VDB-001..003`, `REQ-MAINT-001..006`: technology-to-WG onboarding and charter vector DB lifecycle.
 - `REQ-MODE-001`: Webex bot delivery mode parity.
-- `REQ-FEAT-010`, `REQ-API-005`: draft tracker.
+- `REQ-FEAT-010`: draft tracker user-facing route.
 - `REQ-FEAT-003`: full charter output (current default flow summarizes).
 - `REQ-FEAT-006`: meeting update output lacks agenda/minutes summaries.
 - `REQ-INPUT-002`, `REQ-UX-001`: iterative next-options loop + explicit quit path after actions.
-- `REQ-MAINT-007`: maintainer garbage collector for docs/architecture drift.
 
 # Scope
 In scope:
@@ -95,7 +93,20 @@ Mandatory gate:
   - `ietf-wg-maintainer db-metadata`
   - `ietf-wg-maintainer garbage-collector`
 - Added tests for new APIs and maintainer command behavior.
+- Implemented REQ-API-003..006 contract wrappers in `ietf.py`:
+  - `get_wg_charter`, `get_wg_active_drafts`, `get_wg_discussion_summary`,
+    `get_wg_last_two_meeting_updates`,
+    `get_upcoming_ietf_agenda_summary`, `get_last_ietf_meeting_summary`,
+    `track_draft_or_rfc`, `run_daily_wg_update`, `schedule_daily_updates`
+- Wired user-facing technology onboarding:
+  - CLI route via `tech` onboarding trigger.
+  - MCP tool `technology_onboarding(query, top_k, require_all_terms)`.
+- Deepened garbage collector checks with semantic drift rules:
+  - API-doc status alignment,
+  - entrypoint contract alignment,
+  - module-index alignment,
+  - vector DB schema token checks.
 - Remaining in this plan:
-  - user-facing technology onboarding route,
-  - REQ-API-003..006 wrappers,
-  - draft tracker, Webex parity, and CLI iterative UX loop.
+  - draft tracker CLI/MCP user-facing route,
+  - Webex parity,
+  - CLI iterative UX loop and full-charter mode.

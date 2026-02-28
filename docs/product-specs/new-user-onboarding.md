@@ -42,17 +42,19 @@ This section is based on repository code + tests review, not live end-to-end exe
 | Daily updates only when new content exists (`REQ-FEAT-007`, `REQ-REL-003`) | Coded | Discussion-update email skips send when no updates. |
 | Upcoming IETF meeting agenda summary (`REQ-FEAT-008`) | Coded | Next meeting metadata + WG agenda summaries implemented. |
 | Last completed IETF meeting summary (`REQ-FEAT-009`) | Coded | Meeting detection + WG minutes summaries implemented. |
-| Draft tracker (`REQ-FEAT-010`) | Not coded | Explicit gap. |
-| Technology onboarding + charter vector DB (`REQ-FEAT-001`, `REQ-VDB-*`, `REQ-MAINT-*`) | Partially coded | Maintainer DB rebuild/metadata/matching APIs are coded; user-facing onboarding route is still pending. |
+| Draft tracker (`REQ-FEAT-010`) | Partially coded | Internal tracker API exists (`track_draft_or_rfc`), but user-facing CLI/MCP route remains pending. |
+| Technology onboarding + charter vector DB (`REQ-FEAT-001`, `REQ-VDB-*`, `REQ-MAINT-*`) | Coded (CLI/MCP) | Maintainer DB lifecycle + matching APIs are coded and user-facing onboarding is wired in CLI/MCP; Webex parity remains pending. |
 | Webex delivery mode parity (`REQ-MODE-001`) | Not coded | Explicit gap. |
 | Iterative follow-up and always offer Quit (`REQ-INPUT-002`, `REQ-UX-001`) | Partially coded | Current CLI is mostly one-shot menu flow. |
-| Internal API contract naming (`REQ-API-001..006`) | Partially coded | REQ-API-001/002 baseline names now exist; remaining contract functions are still pending. |
+| Internal API contract naming (`REQ-API-001..006`) | Coded | All requirement-named wrappers are implemented in `ietf.py`. |
 
 ### 3.2 What Is Implemented in Code Today
 
 Core modules:
 - `src/ietf_wg_agent/ietf.py`
   - WG fetch/resolve/suggest
+  - requirement-named API contract wrappers (`REQ-API-001..006`)
+  - technology-to-WG vector matching and tracker wrappers
   - charter extraction
   - draft parsing/status/abstract extraction
   - mailarchive discussion extraction
