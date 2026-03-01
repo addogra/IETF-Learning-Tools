@@ -12,6 +12,8 @@ Purpose: define coding standards, review standards, and test considerations for 
 - Prefer official API sources first; use HTML fallback parsers when needed.
 - Fallback parsing must be explicit and constrained.
 - Never silently swallow parser/network failures; return actionable errors.
+- Network access policy: use a 120-second timeout for Datatracker/mailarchive web requests.
+- Error messages for network failures must include the exact URL that was unreachable.
 
 ### 1.3 Surface parity and contract consistency
 - Keep shared feature semantics aligned across CLI and MCP.
@@ -76,6 +78,7 @@ Purpose: define coding standards, review standards, and test considerations for 
 - Onboarding prompts: keep minimal and stable; avoid repeating long navigation hints.
 - Active drafts onboarding path: bounded output for latency control.
 - Use requirement-named wrappers in `ietf.py` for contract-level integrations.
+- Web fetch defaults in `ietf.py` use `HTTP_TIMEOUT_SECONDS = 120` and URL-specific failure messages.
 
 ## 6. Update Rules For This File
 - Update when new review standards or test expectations are introduced.

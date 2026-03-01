@@ -21,15 +21,17 @@ rectangle "CLI (ietf-wg-agent)" as CLI
 rectangle "User Type Menu\n1) New engineer\n2) Experienced engineer" as Menu
 rectangle "Type A Input\nREQ-FEAT-001\nWhat technology area are you interested in?" as TechInput
 rectangle "suggest_wgs_by_technology(...)\n(vector DB + context match)" as TechMatch
+rectangle "Type A Post-Selection\nPrint new-participant link\nhttps://www.ietf.org/meeting/new-participants/" as TypeAHelp
 rectangle "Type B Input\nREQ-FEAT-002\nWhat Working Group are you interested in?" as WgInput
 rectangle "resolve_wg_name(...)\n(short/full + suggestions)" as WgResolve
 rectangle "WG Selection\nSelect 1..N" as WgSelect
-rectangle "WG Feature Menu\n1) Summary of WG\n2) Active drafts\n3) Draft discussions (last 3 months)\n4) Updates from last 2 IETF meetings\nb) Back, q) Quit" as FeatureMenu
+rectangle "WG Feature Menu\n1) Summary of WG\n2) Active drafts\n3) Draft discussions (last 3 months)\n4) Updates from last 2 IETF meetings\n5) Agenda of upcoming IETF meeting\nb) Back, q) Quit" as FeatureMenu
 rectangle "REQ-FEAT-003\nget_wg_charter(...)\nComplete charter text" as Charter
 rectangle "REQ-FEAT-004\nget_wg_active_drafts(..., limit=10)\nidentifier/title/status" as Drafts
 rectangle "REQ-FEAT-005\nget_wg_discussion_summary(..., window_days=90)\nsummary + threads" as Discussions
 rectangle "REQ-FEAT-006\nget_wg_last_two_meeting_updates(...)\nIETF <number> agenda + minutes" as Meetings
-rectangle "ietf.py core parsers" as Core
+rectangle "REQ-FEAT-008\nget_upcoming_ietf_agenda_summary()\nimportant-dates + agenda links\nImportant details (IETF 125/126/127)" as Upcoming
+rectangle "ietf.py core parsers\n120s timeout + URL-specific errors" as Core
 database "Vector DB\ndata/wg_charter_vector_db.json" as VDB
 cloud "Datatracker + Mailarchive" as Sources
 
@@ -42,32 +44,37 @@ Menu --> WgInput : user type = 2
 TechInput --> TechMatch
 TechMatch --> VDB
 TechMatch --> WgSelect
+WgSelect --> TypeAHelp : from type A
+TypeAHelp --> FeatureMenu
 
 WgInput --> WgResolve
 WgResolve --> WgSelect
+WgSelect --> FeatureMenu : from type B
 
-WgSelect --> FeatureMenu
 FeatureMenu --> Charter : option 1
 FeatureMenu --> Drafts : option 2
 FeatureMenu --> Discussions : option 3
 FeatureMenu --> Meetings : option 4
+FeatureMenu --> Upcoming : option 5
 
 Charter --> Core
 Drafts --> Core
 Discussions --> Core
 Meetings --> Core
+Upcoming --> Core
 Core --> Sources
 
 Charter --> FeatureMenu : continue
 Drafts --> FeatureMenu : continue
 Discussions --> FeatureMenu : continue
 Meetings --> FeatureMenu : continue
+Upcoming --> FeatureMenu : continue
 FeatureMenu --> WgSelect : b (Back)
 WgSelect --> Menu : b (Back)
 FeatureMenu --> CLI : q (Quit)
 
 note bottom of FeatureMenu
-REQ-FEAT-001..006 loop is iterative.
+REQ-FEAT-001..006 + REQ-FEAT-008 loop is iterative.
 User can continue actions on the selected WG
 or backtrack to re-select WG/user-type.
 end note

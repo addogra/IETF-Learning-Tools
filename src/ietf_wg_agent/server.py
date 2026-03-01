@@ -88,19 +88,7 @@ if FastMCP is not None:
         return "\n".join(lines)
 
     def _format_upcoming_ietf_agenda(header: str, items: list[UpcomingAgendaItem]) -> str:
-        lines = [header, ""]
-        if not items:
-            lines.append(
-                "No WG agendas are currently published for the upcoming IETF meeting."
-            )
-            return "\n".join(lines)
-
-        for item in items:
-            lines.append(f"Working Group {item.wg_name} ({item.wg_acronym.upper()})")
-            lines.append(f"- Agenda: {item.agenda_url}")
-            lines.append(f"- Summary: {item.agenda_summary}")
-            lines.append("")
-        return "\n".join(lines).strip()
+        return header.strip()
 
     def _format_last_ietf_meeting_summary(header: str, items: list[LastMeetingItem]) -> str:
         lines = [header, ""]

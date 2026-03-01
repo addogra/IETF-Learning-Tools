@@ -12,3 +12,4 @@ Archive completed plans here with outcomes and links to merged changes.
 - `2026-03-01-req-feat-005-iterative-cli.md` - iterative CLI flow for REQ-FEAT-001..005 and REQ-FEAT-005 draft-discussion summary delivery.
 - `2026-03-01-req-feat-001-005-docs-sync.md` - architecture/product-spec/design-doc sync for completed REQ-FEAT-001..005, PlantUML architecture artifact, and parser-date regression updates.
 - `2026-03-01-req-feat-006-last-two-ietf-meetings.md` - REQ-FEAT-006 implementation for last-2-IETF-meeting updates with IETF-number filtering, agenda/minutes formatting, tests, and per-feature PlantUML artifacts.
+- `2026-03-01-req-feat-008-upcoming-agenda-important-dates.md` - REQ-FEAT-008 implementation for important-dates + agenda.txt parsing, required upcoming-meeting milestone output, CLI option 5, and test/diagram updates.

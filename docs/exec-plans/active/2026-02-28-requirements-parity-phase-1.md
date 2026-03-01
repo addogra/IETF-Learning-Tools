@@ -95,13 +95,21 @@ Mandatory gate:
 - Wired user-facing technology onboarding:
   - CLI route via User Type A prompt (`What technology area are you interested in?`).
   - MCP tool `technology_onboarding(query, top_k, require_all_terms)`.
-- Implemented iterative CLI flow for REQ-FEAT-001..006:
+- Implemented iterative CLI flow for REQ-FEAT-001..006 + REQ-FEAT-008:
   - explicit `Back`/`Quit` navigation at user-type, WG-resolution, and feature-menu levels.
 - Implemented REQ-FEAT-005 in CLI feature menu:
   - `Draft discussions in a WG (last 3 months)` from mailarchive via `get_wg_discussion_summary(..., window_days=90)`.
 - Implemented REQ-FEAT-006 in CLI feature menu:
   - `Updates from last 2 IETF meetings` via `get_wg_last_two_meeting_updates(...)`.
   - Extraction includes only `IETF <number>` meetings and returns agenda/minutes links.
+- Implemented REQ-FEAT-008 in CLI feature menu:
+  - `Agenda of upcoming IETF meeting` via `get_upcoming_ietf_agenda_summary()`.
+  - Extraction now uses `important-dates` + `meeting/<number>/agenda.txt`.
+  - Output includes next planned events, required milestone dates, and WG agenda summaries.
+  - Added readiness gate: if `agenda.txt` is minimal and current date is before
+    final-agenda publication date, output explicit not-yet-published message with date.
+  - Added label fallback mapping so `Preliminary Agenda published` satisfies the
+    `Final agenda to be published` milestone for user output.
 - Aligned REQ-FEAT-003 behavior across MCP:
   - `summary_of_wg(query)` now returns complete charter text (non-truncated).
 - Hardened discussion date parsing:

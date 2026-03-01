@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """Interactive CLI orchestration.
 
-REQ-FEAT-001..006 flow in this module:
+REQ-FEAT-001..006 and REQ-FEAT-008 flow in this module:
 1) Select user type (new engineer vs experienced engineer).
 2) Resolve WG by technology query or WG name.
 3) Run iterative WG feature menu with Back/Quit navigation.
@@ -13,6 +13,7 @@ from ietf_wg_agent.ietf import (
     DiscussionSummary,
     DraftResult,
     MeetingUpdates,
+    UpcomingMeetingSummary,
     WgMatch,
     WgResolutionResult,
     WorkingGroup,
@@ -20,6 +21,7 @@ from ietf_wg_agent.ietf import (
     get_wg_charter,
     get_wg_discussion_summary,
     get_wg_last_two_meeting_updates,
+    get_upcoming_ietf_agenda_summary,
     resolve_wg_name,
     suggest_wgs_by_technology,
 )
@@ -28,6 +30,7 @@ from ietf_wg_agent.ietf import (
 NAV_BACK = "__back__"
 NAV_QUIT = "__quit__"
 ACTIVE_DRAFTS_LIMIT = 10
+NEW_PARTICIPANT_GUIDE_URL = "https://www.ietf.org/meeting/new-participants/"
 
 
 def _read_nav_input(prompt: str) -> str:
@@ -93,6 +96,10 @@ def _format_meeting_updates(meeting_updates: MeetingUpdates) -> str:
         else:
             lines.append("  - Not found.")
     return "\n".join(lines)
+
+
+def _format_upcoming_ietf_agenda(summary: UpcomingMeetingSummary) -> str:
+    return summary.header.strip()
 
 
 def _resolve_from_technology_flow() -> tuple[str, WorkingGroup | None]:
@@ -190,6 +197,7 @@ def _wg_feature_menu(wg: WorkingGroup) -> str:
         print("2. Active drafts")
         print("3. Draft discussions in a WG (last 3 months)")
         print("4. Updates from last 2 IETF meetings")
+        print("5. Agenda of upcoming IETF meeting(Not working group specific)")
         print("b. Back")
         print("q. Quit")
 
@@ -216,6 +224,9 @@ def _wg_feature_menu(wg: WorkingGroup) -> str:
             elif option == "4":
                 updates = get_wg_last_two_meeting_updates(wg.acronym)
                 print("\n" + _format_meeting_updates(updates))
+            elif option == "5":
+                upcoming = get_upcoming_ietf_agenda_summary()
+                print("\n" + _format_upcoming_ietf_agenda(upcoming))
             else:
                 print("Unsupported option.")
         except DatatrackerError as exc:
@@ -252,6 +263,11 @@ def main() -> None:
             return
         if status == NAV_BACK or wg is None:
             continue
+        if user_type == "1":
+            print(
+                "If you want to know what a new participant should do in IETF, "
+                f"here is a useful link: {NEW_PARTICIPANT_GUIDE_URL}"
+            )
 
         menu_status = _wg_feature_menu(wg)
         if menu_status == NAV_QUIT:

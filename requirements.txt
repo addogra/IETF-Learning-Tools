@@ -159,12 +159,31 @@ REQ-FEAT-007: "Daily updates"
 - If no updates for the day, MUST NOT send an email/update payload.
 
 REQ-FEAT-008: "Agenda of upcoming IETF meeting"
-- Discover next IETF meeting metadata first (number, dates, place).
+- Discover upcoming IETF events from: https://datatracker.ietf.org/meeting/important-dates/
+- Include next planned IETF events with dates and location.
+- Include important dates for the next event at minimum:
+  - IETF Online Registration Opens
+  - Final agenda to be published
+  - Internet-Draft submission cut-off
+  - Registration cancellation cut-off
+- For agenda source, use:
+  - https://datatracker.ietf.org/meeting/<IETF-NUMBER>/agenda.txt
 - Traverse WGs and include only those with published agenda.
 - If agenda is not yet published for a WG (common until ~5 days before meeting), skip that WG.
+- If `agenda.txt` is effectively boilerplate/minimal and current date is earlier than the event
+  final-agenda publish date, output:
+  - `Agenda is NOT yet published, for this IETF-<Number>,Final agenda will be published on <Date>.`
+- Important-dates parsing SHOULD treat "Preliminary Agenda published" as satisfying the
+  `Final agenda to be published` milestone contract for user messaging.
 - Output format:
-  - IETF <number> - <dates> - <place>
-  - Working Group <name> - summarized agenda
+  - next IETF events planned and dates and location
+  - IETF <number> - Dates <date> - Place <place>
+  - Important details (IETF <number>) with:
+    - IETF Online Registration Opens
+    - Final agenda to be published
+    - Agenda link (`https://datatracker.ietf.org/meeting/<number>/agenda.txt`)
+    - Internet-Draft submission cut-off
+    - Registration cancellation cut-off
 
 REQ-FEAT-009: "Summary of last IETF meeting"
 - Discover last completed IETF meeting metadata first (number, dates, place).

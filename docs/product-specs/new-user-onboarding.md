@@ -40,12 +40,12 @@ This section is based on repository code + tests review, not live end-to-end exe
 | Last 3 months discussion summary (`REQ-FEAT-005`) | Coded | Mailarchive parser with bounded pagination. |
 | Last 2 WG meetings updates (`REQ-FEAT-006`) | Coded | Meeting extraction now filters `IETF <number>` entries and returns agenda/minutes links for latest 2 meetings. |
 | Daily updates only when new content exists (`REQ-FEAT-007`, `REQ-REL-003`) | Coded | Discussion-update email skips send when no updates. |
-| Upcoming IETF meeting agenda summary (`REQ-FEAT-008`) | Coded | Next meeting metadata + WG agenda summaries implemented. |
+| Upcoming IETF meeting agenda summary (`REQ-FEAT-008`) | Coded | Parses `important-dates` + `agenda.txt`, prints next planned events, required important dates, and WG agenda summaries. |
 | Last completed IETF meeting summary (`REQ-FEAT-009`) | Coded | Meeting detection + WG minutes summaries implemented. |
 | Draft tracker (`REQ-FEAT-010`) | Partially coded | Internal tracker API exists (`track_draft_or_rfc`), but user-facing CLI/MCP route remains pending. |
 | Technology onboarding + charter vector DB (`REQ-FEAT-001`, `REQ-VDB-*`, `REQ-MAINT-*`) | Coded (CLI/MCP) | Maintainer DB lifecycle + matching APIs are coded and user-facing onboarding is wired in CLI/MCP. |
 | Webex delivery mode parity (`REQ-MODE-001`) | Not coded | Explicit gap. |
-| Iterative follow-up and always offer Quit (`REQ-INPUT-002`, `REQ-UX-001`) | Coded (REQ-FEAT-001..006 flow) | CLI now supports iterative menus with explicit `Back` and `Quit` navigation for onboarding + WG options 1-4. |
+| Iterative follow-up and always offer Quit (`REQ-INPUT-002`, `REQ-UX-001`) | Coded (REQ-FEAT-001..006 + REQ-FEAT-008 flow) | CLI now supports iterative menus with explicit `Back` and `Quit` navigation for onboarding + WG options 1-5. |
 | Internal API contract naming (`REQ-API-001..006`) | Coded | All requirement-named wrappers are implemented in `ietf.py`. |
 
 ### 3.2 What Is Implemented in Code Today

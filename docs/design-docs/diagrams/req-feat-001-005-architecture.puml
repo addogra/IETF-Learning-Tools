@@ -21,6 +21,7 @@ rectangle "CLI (ietf-wg-agent)" as CLI
 rectangle "User Type Menu\n1) New engineer\n2) Experienced engineer" as Menu
 rectangle "Type A Input\nREQ-FEAT-001\nWhat technology area are you interested in?" as TechInput
 rectangle "suggest_wgs_by_technology(...)\n(vector DB + context match)" as TechMatch
+rectangle "Type A Post-Selection\nPrint new-participant link\nhttps://www.ietf.org/meeting/new-participants/" as TypeAHelp
 rectangle "Type B Input\nREQ-FEAT-002\nWhat Working Group are you interested in?" as WgInput
 rectangle "resolve_wg_name(...)\n(short/full + suggestions)" as WgResolve
 rectangle "WG Selection\nSelect 1..N" as WgSelect
@@ -41,11 +42,13 @@ Menu --> WgInput : user type = 2
 TechInput --> TechMatch
 TechMatch --> VDB
 TechMatch --> WgSelect
+WgSelect --> TypeAHelp : from type A
+TypeAHelp --> FeatureMenu
 
 WgInput --> WgResolve
 WgResolve --> WgSelect
+WgSelect --> FeatureMenu : from type B
 
-WgSelect --> FeatureMenu
 FeatureMenu --> Charter : option 1
 FeatureMenu --> Drafts : option 2
 FeatureMenu --> Discussions : option 3

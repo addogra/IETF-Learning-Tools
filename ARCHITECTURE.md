@@ -21,7 +21,7 @@
   - drafts/discussions/meetings retrieval
   - requirement-named internal API wrappers (`REQ-API-001..006`)
 - `src/ietf_wg_agent/cli.py`
-  - interactive iterative onboarding for `REQ-FEAT-001..006`
+  - interactive iterative onboarding for `REQ-FEAT-001..006` + `REQ-FEAT-008`
 - `src/ietf_wg_agent/server.py`
   - MCP tools mirroring core features
 - `src/ietf_wg_agent/summarizer.py`
@@ -59,11 +59,13 @@ Completed for onboarding slice:
 - `REQ-FEAT-004`: active drafts output in onboarding flow (limited to latest 10 for performance).
 - `REQ-FEAT-005`: WG draft-discussion summary for last 3 months.
 - `REQ-FEAT-006`: updates from last 2 IETF meetings with agenda/minutes links.
+- `REQ-FEAT-008`: upcoming IETF agenda summary from `important-dates` + `agenda.txt`,
+  including required milestone details and agenda links per IETF event.
 
 Notes on reliability:
 - Discussion parser now uses metadata-focused date extraction to avoid false positives from subject text deadlines (for example `Ends YYYY-MM-DD`).
 
-Open gaps outside `REQ-FEAT-001..006`:
+Open gaps outside completed onboarding slice:
 - Webex delivery mode parity (`REQ-MODE-001`).
 - Draft tracker user-facing route (`REQ-FEAT-010`) though API wrapper exists.
 
@@ -73,16 +75,18 @@ Open gaps outside `REQ-FEAT-001..006`:
 - Maintainer vector DB: `data/wg_charter_vector_db.json`
 
 ## Diagrams
-- REQ-FEAT-001..006 architecture (PlantUML source + SVG):
+- REQ-FEAT-001..006 + REQ-FEAT-008 architecture (PlantUML source + SVG):
   - `docs/design-docs/diagrams/req-feat-001-006-architecture.puml`
   - `docs/design-docs/diagrams/req-feat-001-006-architecture.svg`
-- REQ-FEAT-001..006 per-feature flow diagrams (PlantUML + SVG):
+- REQ-FEAT per-feature flow diagrams (PlantUML + SVG):
   - `docs/design-docs/diagrams/req-feat-001-flow.puml` / `.svg`
   - `docs/design-docs/diagrams/req-feat-002-flow.puml` / `.svg`
   - `docs/design-docs/diagrams/req-feat-003-flow.puml` / `.svg`
   - `docs/design-docs/diagrams/req-feat-004-flow.puml` / `.svg`
   - `docs/design-docs/diagrams/req-feat-005-flow.puml` / `.svg`
   - `docs/design-docs/diagrams/req-feat-006-flow.puml` / `.svg`
+  - `docs/design-docs/diagrams/req-feat-007-flow.puml` / `.svg`
+  - `docs/design-docs/diagrams/req-feat-008-flow.puml` / `.svg`
 
 ## API Contract Reference
 - `docs/design-docs/internal-api-contract.md`

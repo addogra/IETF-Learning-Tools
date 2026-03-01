@@ -4,6 +4,8 @@ from ietf_wg_agent.ietf import (
     DraftResult,
     MeetingUpdate,
     MeetingUpdates,
+    UpcomingAgendaItem,
+    UpcomingMeetingSummary,
     WgMatch,
     WgResolutionResult,
     WorkingGroup,
@@ -58,6 +60,7 @@ def test_cli_new_engineer_technology_onboarding_summary_then_quit(monkeypatch, c
 
     assert "Technology onboarding results for 'OSPF security':" in out
     assert "1. LSR - Link State Routing (score=0.9100)" in out
+    assert "https://www.ietf.org/meeting/new-participants/" in out
     assert "Complete charter for Link State Routing (LSR):" in out
     assert "Complete charter text without truncation." in out
     assert "Goodbye." in out
@@ -146,6 +149,7 @@ def test_cli_experienced_engineer_resolution_with_back_to_previous_menu(monkeypa
 
     assert "Matched WG: LSR - Link State Routing" in out
     assert "Full charter payload." in out
+    assert "https://www.ietf.org/meeting/new-participants/" not in out
     assert out.count("User Types:") >= 2
     assert "Goodbye." in out
 
@@ -352,3 +356,115 @@ def test_cli_updates_from_last_two_ietf_meetings(monkeypatch, capsys):
     assert "Agenda:" in out
     assert "Minutes:" in out
     assert "minutes-wg-lsr" in out
+
+
+def test_cli_agenda_of_upcoming_ietf_meeting(monkeypatch, capsys):
+    _feed_inputs(
+        monkeypatch,
+        [
+            "2",          # user type
+            "LSR",        # WG input
+            "5",          # option: upcoming IETF agenda
+            "q",          # quit
+        ],
+    )
+
+    monkeypatch.setattr(
+        cli,
+        "resolve_wg_name",
+        lambda _query: WgResolutionResult(
+            query="LSR",
+            matched=WorkingGroup(acronym="lsr", name="Link State Routing"),
+            suggestions=[],
+        ),
+    )
+
+    monkeypatch.setattr(
+        cli,
+        "get_upcoming_ietf_agenda_summary",
+        lambda: UpcomingMeetingSummary(
+            header=(
+                "Next IETF events planned and dates and location:\n"
+                "- IETF 125 - Dates 2026-03-14 - Place Shenzhen, CN\n"
+                "- IETF 126 - Dates 2026-07-18 - Place Vienna, AT\n"
+                "- IETF 127 - Dates 2026-11-14 - Place San Francisco, US\n\n"
+                "Important details (IETF 125):\n"
+                "- IETF Online Registration Opens: 2025-09-22\n"
+                "- Final agenda to be published: 2026-03-09\n"
+                "- Agenda link - for IETF-125: https://datatracker.ietf.org/meeting/125/agenda.txt\n"
+                "- Internet-Draft submission cut-off: 2026-03-02\n"
+                "- Registration cancellation cut-off: 2026-03-16\n\n"
+                "Important details (IETF 126):\n"
+                "- IETF Online Registration Opens: 2026-03-30\n"
+                "- Final agenda to be published: 2026-06-19\n"
+                "- Agenda link - for IETF-126: https://datatracker.ietf.org/meeting/126/agenda.txt\n"
+                "- Internet-Draft submission cut-off: 2026-07-06\n"
+                "- Registration cancellation cut-off: 2026-07-13\n\n"
+                "Important details (IETF 127):\n"
+                "- IETF Online Registration Opens: 2026-07-27\n"
+                "- Final agenda to be published: 2026-10-16\n"
+                "- Agenda link - for IETF-127: https://datatracker.ietf.org/meeting/127/agenda.txt\n"
+                "- Internet-Draft submission cut-off: 2026-11-02\n"
+                "- Registration cancellation cut-off: 2026-11-09"
+            ),
+            items=[],
+        ),
+    )
+
+    cli.main()
+    out = capsys.readouterr().out
+
+    assert "Next IETF events planned and dates and location:" in out
+    assert "IETF 125 - Dates 2026-03-14 - Place Shenzhen, CN" in out
+    assert "Important details (IETF 125):" in out
+    assert "Agenda link - for IETF-125: https://datatracker.ietf.org/meeting/125/agenda.txt" in out
+    assert "Important details (IETF 126):" in out
+    assert "Important details (IETF 127):" in out
+    assert "meeting/125/agenda.txt" in out
+    assert "Working Group " not in out
+
+
+def test_cli_agenda_not_published_notice_without_duplicate_fallback(monkeypatch, capsys):
+    _feed_inputs(
+        monkeypatch,
+        [
+            "2",          # user type
+            "LSR",        # WG input
+            "5",          # option: upcoming IETF agenda
+            "q",          # quit
+        ],
+    )
+
+    monkeypatch.setattr(
+        cli,
+        "resolve_wg_name",
+        lambda _query: WgResolutionResult(
+            query="LSR",
+            matched=WorkingGroup(acronym="lsr", name="Link State Routing"),
+            suggestions=[],
+        ),
+    )
+    monkeypatch.setattr(
+        cli,
+        "get_upcoming_ietf_agenda_summary",
+        lambda: UpcomingMeetingSummary(
+            header=(
+                "Next IETF events planned and dates and location:\n"
+                "- IETF 126 - Dates 2099-07-18 - Place Vienna, AT\n\n"
+                "Important details (IETF 126):\n"
+                "- IETF Online Registration Opens: 2099-03-01\n"
+                "- Final agenda to be published: 2099-06-19\n"
+                "- Agenda link - for IETF-126: https://datatracker.ietf.org/meeting/126/agenda.txt\n"
+                "- Internet-Draft submission cut-off: 2099-07-06\n"
+                "- Registration cancellation cut-off: 2099-07-10\n\n"
+                "Agenda is NOT yet published, for this IETF-126,"
+                "Final agenda will be published on 2099-06-19."
+            ),
+            items=[],
+        ),
+    )
+
+    cli.main()
+    out = capsys.readouterr().out
+    assert "Agenda is NOT yet published, for this IETF-126," in out
+    assert "No WG agendas are currently published for the upcoming IETF meeting." not in out

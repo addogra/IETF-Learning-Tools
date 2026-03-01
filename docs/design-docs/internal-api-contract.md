@@ -18,7 +18,7 @@ This document defines the normative internal API names from `requirements.txt`, 
 | REQ-API-003 | `get_wg_active_drafts` | `(wg_id: str, limit: int = 5) -> list[DraftResult]` | Implemented | `src/ietf_wg_agent/ietf.py` | Wrapper over active-draft parser with normalized result type. |
 | REQ-API-003 | `get_wg_discussion_summary` | `(wg_id: str, window_days: int = 90) -> DiscussionSummary` | Implemented | `src/ietf_wg_agent/ietf.py` | Windowed discussion summary wrapper with post list and summary text. |
 | REQ-API-003 | `get_wg_last_two_meeting_updates` | `(wg_id: str) -> MeetingUpdates` | Implemented | `src/ietf_wg_agent/ietf.py` | Wrapper for last-two-meeting agenda/minutes updates. |
-| REQ-API-004 | `get_upcoming_ietf_agenda_summary` | `() -> UpcomingMeetingSummary` | Implemented | `src/ietf_wg_agent/ietf.py` | Wraps upcoming-meeting agenda extraction. |
+| REQ-API-004 | `get_upcoming_ietf_agenda_summary` | `() -> UpcomingMeetingSummary` | Implemented | `src/ietf_wg_agent/ietf.py` | Wraps important-dates + upcoming `agenda.txt` extraction and WG agenda summarization. |
 | REQ-API-004 | `get_last_ietf_meeting_summary` | `() -> LastMeetingSummary` | Implemented | `src/ietf_wg_agent/ietf.py` | Wraps last-completed-meeting summary extraction. |
 | REQ-API-005 | `track_draft_or_rfc` | `(identifier: str, include_vendor_signals: bool = False) -> DraftTrackerResult` | Implemented | `src/ietf_wg_agent/ietf.py` | Datatracker document metadata tracker wrapper. |
 | REQ-API-006 | `run_daily_wg_update` | `(wg_id: str, notify: bool = True) -> DailyUpdateResult` | Implemented | `src/ietf_wg_agent/ietf.py` | One-shot WG daily discussion summary with optional notification send. |
@@ -41,12 +41,17 @@ All contract wrappers return explicit result models declared in `ietf.py`:
 - CLI WG meeting-updates route: `src/ietf_wg_agent/cli.py`
   - menu option `4. Updates from last 2 IETF meetings`
   - powered by `get_wg_last_two_meeting_updates(...)`
+- CLI upcoming-IETF-agenda route: `src/ietf_wg_agent/cli.py`
+  - menu option `5. Agenda of upcoming IETF meeting`
+  - powered by `get_upcoming_ietf_agenda_summary()`
 - MCP technology onboarding tool: `src/ietf_wg_agent/server.py`
   - tool: `technology_onboarding(query, top_k=10, require_all_terms=True)`
 - MCP WG summary tool: `src/ietf_wg_agent/server.py`
   - tool: `summary_of_wg(query)` now returns complete charter text
 - MCP meeting-updates tool: `src/ietf_wg_agent/server.py`
   - tool: `updates_from_last_2_ietf_meetings(query)`
+- MCP upcoming-agenda tool: `src/ietf_wg_agent/server.py`
+  - tool: `agenda_of_upcoming_ietf_meeting()`
 
 ## Maintainer Enforcement
 `ietf-wg-maintainer garbage-collector` verifies:

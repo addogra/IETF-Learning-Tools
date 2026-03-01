@@ -38,7 +38,12 @@ MAILARCHIVE_BROWSE_URL_TEMPLATE = "https://mailarchive.ietf.org/arch/browse/{acr
 WG_MEETINGS_URL_TEMPLATE = "https://datatracker.ietf.org/wg/{acronym}/meetings/"
 MEETINGS_INDEX_URL = "https://datatracker.ietf.org/meeting/"
 MEETING_PAGE_URL_TEMPLATE = "https://datatracker.ietf.org/meeting/{number}/"
+IMPORTANT_DATES_URL = "https://datatracker.ietf.org/meeting/important-dates/"
+MEETING_AGENDA_TXT_URL_TEMPLATE = (
+    "https://datatracker.ietf.org/meeting/{number}/agenda.txt"
+)
 CHARTER_DB_SCHEMA_VERSION = 1
+HTTP_TIMEOUT_SECONDS = 120
 
 
 @dataclass(frozen=True)
@@ -238,6 +243,10 @@ class DatatrackerError(RuntimeError):
     pass
 
 
+def _access_error(url: str, exc: Exception) -> str:
+    return f"Unable to access URL '{url}': {exc}"
+
+
 def _normalize(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
 
@@ -404,7 +413,7 @@ def _working_groups_from_vector_db() -> list[WorkingGroup]:
     return out
 
 
-def fetch_working_groups(timeout: int = 20) -> list[WorkingGroup]:
+def fetch_working_groups(timeout: int = HTTP_TIMEOUT_SECONDS) -> list[WorkingGroup]:
     """Fetch WG acronym/name catalog from IETF Datatracker API.
 
     Section 1 entry point for WG discovery.
@@ -414,7 +423,7 @@ def fetch_working_groups(timeout: int = 20) -> list[WorkingGroup]:
         response = requests.get(WG_API_URL, params=params, timeout=timeout)
         response.raise_for_status()
     except requests.RequestException as exc:
-        raise DatatrackerError(f"Unable to fetch WG list: {exc}") from exc
+        raise DatatrackerError(_access_error(WG_API_URL, exc)) from exc
 
     payload = response.json()
     objects = payload.get("objects", [])
@@ -536,7 +545,7 @@ def suggest_working_groups(
     return out
 
 
-def crawl_active_working_groups(timeout: int = 20) -> list[WorkingGroup]:
+def crawl_active_working_groups(timeout: int = HTTP_TIMEOUT_SECONDS) -> list[WorkingGroup]:
     """Crawl Datatracker WG index page and enumerate active WG entries.
 
     Falls back to API catalog retrieval when HTML parsing cannot produce entries.
@@ -545,7 +554,7 @@ def crawl_active_working_groups(timeout: int = 20) -> list[WorkingGroup]:
         response = requests.get(WG_INDEX_URL, timeout=timeout)
         response.raise_for_status()
     except requests.RequestException as exc:
-        raise DatatrackerError(f"Unable to fetch WG index page: {exc}") from exc
+        raise DatatrackerError(_access_error(WG_INDEX_URL, exc)) from exc
 
     soup = BeautifulSoup(response.text, "html.parser")
     parsed_rows: list[tuple[str, str]] = []
@@ -604,7 +613,7 @@ def crawl_active_working_groups(timeout: int = 20) -> list[WorkingGroup]:
     return groups
 
 
-def fetch_wg_documents_section_text(acronym: str, timeout: int = 20) -> str:
+def fetch_wg_documents_section_text(acronym: str, timeout: int = HTTP_TIMEOUT_SECONDS) -> str:
     """Fetch and extract textual corpus from WG documents page.
 
     This captures document-table and section text so terms appearing in draft
@@ -615,7 +624,7 @@ def fetch_wg_documents_section_text(acronym: str, timeout: int = 20) -> str:
         response = requests.get(url, timeout=timeout)
         response.raise_for_status()
     except requests.RequestException as exc:
-        raise DatatrackerError(f"Unable to fetch WG documents page: {exc}") from exc
+        raise DatatrackerError(_access_error(url, exc)) from exc
 
     soup = BeautifulSoup(response.text, "html.parser")
     for tag in soup.find_all(["script", "style", "noscript"]):
@@ -1083,10 +1092,12 @@ def track_draft_or_rfc(
 
     params = {"name": canonical}
     try:
-        response = requests.get(DOC_API_URL, params=params, timeout=20)
+        response = requests.get(
+            DOC_API_URL, params=params, timeout=HTTP_TIMEOUT_SECONDS
+        )
         response.raise_for_status()
     except requests.RequestException as exc:
-        raise DatatrackerError(f"Unable to track identifier '{identifier}': {exc}") from exc
+        raise DatatrackerError(_access_error(DOC_API_URL, exc)) from exc
 
     payload = response.json()
     objects = payload.get("objects", [])
@@ -1218,7 +1229,7 @@ def schedule_daily_updates(subscription: SubscriptionConfig) -> SchedulerResult:
     )
 
 
-def fetch_charter_text(acronym: str, timeout: int = 20) -> str:
+def fetch_charter_text(acronym: str, timeout: int = HTTP_TIMEOUT_SECONDS) -> str:
     """Fetch and extract the WG charter text from the WG about page.
 
     Section 2 entry point for charter retrieval.
@@ -1228,7 +1239,7 @@ def fetch_charter_text(acronym: str, timeout: int = 20) -> str:
         response = requests.get(url, timeout=timeout)
         response.raise_for_status()
     except requests.RequestException as exc:
-        raise DatatrackerError(f"Unable to fetch charter page: {exc}") from exc
+        raise DatatrackerError(_access_error(url, exc)) from exc
 
     soup = BeautifulSoup(response.text, "html.parser")
 
@@ -1282,7 +1293,7 @@ def _parse_datetime(value: str) -> datetime:
         return datetime.min
 
 
-def _get_group_id(acronym: str, timeout: int = 20) -> Optional[int]:
+def _get_group_id(acronym: str, timeout: int = HTTP_TIMEOUT_SECONDS) -> Optional[int]:
     params = {"type": "wg", "acronym": acronym.lower()}
     try:
         response = requests.get(WG_API_URL, params=params, timeout=timeout)
@@ -1299,7 +1310,7 @@ def _get_group_id(acronym: str, timeout: int = 20) -> Optional[int]:
     return None
 
 
-def _fetch_milestones_from_api(acronym: str, timeout: int = 20) -> list[str]:
+def _fetch_milestones_from_api(acronym: str, timeout: int = HTTP_TIMEOUT_SECONDS) -> list[str]:
     group_id = _get_group_id(acronym, timeout=timeout)
     if group_id is None:
         return []
@@ -1320,7 +1331,7 @@ def _fetch_milestones_from_api(acronym: str, timeout: int = 20) -> list[str]:
     return milestones
 
 
-def _fetch_milestones_from_about_page(acronym: str, timeout: int = 20) -> list[str]:
+def _fetch_milestones_from_about_page(acronym: str, timeout: int = HTTP_TIMEOUT_SECONDS) -> list[str]:
     url = WG_ABOUT_URL_TEMPLATE.format(acronym=acronym.lower())
     try:
         response = requests.get(url, timeout=timeout)
@@ -1350,7 +1361,7 @@ def _fetch_milestones_from_about_page(acronym: str, timeout: int = 20) -> list[s
 
 
 def fetch_active_drafts_from_last_two_meetings(
-    acronym: str, timeout: int = 20, limit: int = 8
+    acronym: str, timeout: int = HTTP_TIMEOUT_SECONDS, limit: int = 8
 ) -> list[str]:
     """Best-effort extraction of active drafts from recent milestone entries."""
     milestones = _fetch_milestones_from_api(acronym, timeout=timeout)
@@ -1376,7 +1387,7 @@ def fetch_active_drafts_from_last_two_meetings(
 
 
 def _fetch_approved_rfcs_from_api(
-    acronym: str, timeout: int = 20, limit: int = 5
+    acronym: str, timeout: int = HTTP_TIMEOUT_SECONDS, limit: int = 5
 ) -> list[ApprovedRFC]:
     group_id = _get_group_id(acronym, timeout=timeout)
     if group_id is None:
@@ -1418,7 +1429,7 @@ def _fetch_approved_rfcs_from_api(
 
 
 def _fetch_approved_rfcs_from_documents_page(
-    acronym: str, timeout: int = 20, limit: int = 5
+    acronym: str, timeout: int = HTTP_TIMEOUT_SECONDS, limit: int = 5
 ) -> list[ApprovedRFC]:
     url = WG_DOCUMENTS_URL_TEMPLATE.format(acronym=acronym.lower())
     try:
@@ -1454,7 +1465,7 @@ def _fetch_approved_rfcs_from_documents_page(
 
 
 def fetch_last_approved_rfcs(
-    acronym: str, timeout: int = 20, limit: int = 5
+    acronym: str, timeout: int = HTTP_TIMEOUT_SECONDS, limit: int = 5
 ) -> list[ApprovedRFC]:
     rfcs = _fetch_approved_rfcs_from_api(acronym, timeout=timeout, limit=limit)
     if rfcs:
@@ -1583,7 +1594,7 @@ def _extract_status_from_row_text(row_text: str) -> str:
 
 
 def _fetch_draft_metadata_from_api(
-    draft_name: str, timeout: int = 20
+    draft_name: str, timeout: int = HTTP_TIMEOUT_SECONDS
 ) -> tuple[str, str]:
     params = {"name": draft_name.lower()}
     try:
@@ -1603,7 +1614,7 @@ def _fetch_draft_metadata_from_api(
 
 
 def _fetch_documents_page_drafts(
-    acronym: str, timeout: int = 20, limit: Optional[int] = 5
+    acronym: str, timeout: int = HTTP_TIMEOUT_SECONDS, limit: Optional[int] = 5
 ) -> list[tuple[str, str, str, str]]:
     """
     Return (draft_name, title, doc_url, status) from WG documents page.
@@ -1614,7 +1625,7 @@ def _fetch_documents_page_drafts(
         response = requests.get(url, timeout=timeout)
         response.raise_for_status()
     except requests.RequestException as exc:
-        raise DatatrackerError(f"Unable to fetch WG documents page: {exc}") from exc
+        raise DatatrackerError(_access_error(url, exc)) from exc
 
     soup = BeautifulSoup(response.text, "html.parser")
     seen: set[str] = set()
@@ -1686,7 +1697,7 @@ def _fetch_documents_page_drafts(
 
 
 def fetch_top_active_drafts(
-    acronym: str, timeout: int = 20, limit: Optional[int] = 5
+    acronym: str, timeout: int = HTTP_TIMEOUT_SECONDS, limit: Optional[int] = 5
 ) -> list[DraftInfo]:
     """Fetch top/latest drafts from WG documents page and include metadata.
 
@@ -1903,7 +1914,7 @@ def _extract_discussion_posts_from_page(
 
 
 def fetch_wg_discussions_last_months(
-    acronym: str, months: int = 3, timeout: int = 20, max_pages: int = 3
+    acronym: str, months: int = 3, timeout: int = HTTP_TIMEOUT_SECONDS, max_pages: int = 3
 ) -> list[DiscussionPost]:
     """Fetch WG discussion messages from mailarchive for the last N months.
 
@@ -1925,7 +1936,7 @@ def fetch_wg_discussions_last_months(
             response = requests.get(url, timeout=timeout)
             response.raise_for_status()
         except requests.RequestException as exc:
-            raise DatatrackerError(f"Unable to fetch WG discussions: {exc}") from exc
+            raise DatatrackerError(_access_error(url, exc)) from exc
 
         page_items = _extract_discussion_posts_from_page(response.text, acronym=acronym)
         if not page_items:
@@ -1963,7 +1974,7 @@ def fetch_wg_discussions_last_months(
 
 
 def fetch_wg_discussions_last_day(
-    acronym: str, days: int = 1, timeout: int = 20, max_pages: int = 2
+    acronym: str, days: int = 1, timeout: int = HTTP_TIMEOUT_SECONDS, max_pages: int = 2
 ) -> list[DiscussionPost]:
     """Fetch WG discussion messages from mailarchive for the last N days."""
     url = MAILARCHIVE_BROWSE_URL_TEMPLATE.format(acronym=acronym.lower())
@@ -1981,7 +1992,7 @@ def fetch_wg_discussions_last_day(
             response = requests.get(url, timeout=timeout)
             response.raise_for_status()
         except requests.RequestException as exc:
-            raise DatatrackerError(f"Unable to fetch WG discussions: {exc}") from exc
+            raise DatatrackerError(_access_error(url, exc)) from exc
 
         page_items = _extract_discussion_posts_from_page(response.text, acronym=acronym)
         if not page_items:
@@ -2041,7 +2052,7 @@ def _extract_ietf_meeting_number(href: str, raw_text: str) -> Optional[int]:
 
 def fetch_updates_from_last_two_meetings(
     acronym: str,
-    timeout: int = 20,
+    timeout: int = HTTP_TIMEOUT_SECONDS,
     limit: int = 2,
     include_material_text: bool = False,
 ) -> list[MeetingUpdate]:
@@ -2055,7 +2066,7 @@ def fetch_updates_from_last_two_meetings(
         response = requests.get(url, timeout=timeout)
         response.raise_for_status()
     except requests.RequestException as exc:
-        raise DatatrackerError(f"Unable to fetch WG meetings page: {exc}") from exc
+        raise DatatrackerError(_access_error(url, exc)) from exc
 
     soup = BeautifulSoup(response.text, "html.parser")
     links = soup.find_all("a", href=True)
@@ -2285,7 +2296,7 @@ def _fetch_meeting_material_detail(
         response = requests.get(url, timeout=timeout)
         response.raise_for_status()
     except requests.RequestException as exc:
-        text = f"Unable to fetch material content: {exc}"
+        text = _access_error(url, exc)
         cache[key] = text
         return MeetingMaterial(url=url, text=text)
 
@@ -2355,20 +2366,343 @@ def _extract_meeting_links_for_number(
     return agendas, minutes
 
 
-def fetch_upcoming_ietf_agenda(
-    groups: Iterable[WorkingGroup], timeout: int = 20
-) -> tuple[str, list[UpcomingAgendaItem]]:
-    """
-    Fetch next IETF meeting metadata and summarize available WG agendas.
+IMPORTANT_DATE_DESCRIPTORS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("IETF Online Registration Opens", ("online registration opens",)),
+    (
+        "Final agenda to be published",
+        (
+            "final agenda to be published",
+            "final agenda published",
+            "preliminary agenda published",
+        ),
+    ),
+    (
+        "Internet-Draft submission cut-off",
+        ("internet-draft submission cut-off",),
+    ),
+    (
+        "Registration cancellation cut-off",
+        ("registration cancellation cut-off",),
+    ),
+)
 
-    For each WG, agenda is included only if present (typically published shortly
-    before the meeting).
+
+def _normalize_whitespace(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _important_date_label(description: str) -> Optional[str]:
+    lowered = description.lower()
+    for label, needles in IMPORTANT_DATE_DESCRIPTORS:
+        for needle in needles:
+            if needle in lowered:
+                return label
+    return None
+
+
+def _parse_upcoming_events_from_important_dates(
+    important_dates_html: str,
+) -> list[dict[str, Any]]:
+    soup = BeautifulSoup(important_dates_html, "html.parser")
+    events: dict[str, dict[str, Any]] = {}
+    page_lines = [
+        _normalize_whitespace(line)
+        for line in soup.get_text("\n", strip=True).splitlines()
+        if _normalize_whitespace(line)
+    ]
+
+    for heading in soup.find_all(["h1", "h2", "h3", "h4"]):
+        heading_text = _normalize_whitespace(heading.get_text(" ", strip=True))
+        match = re.search(r"\bIETF\s*([0-9]{2,3})\b", heading_text, flags=re.IGNORECASE)
+        if not match:
+            continue
+
+        meeting_number = match.group(1)
+        dates = "Dates TBD"
+        place = "Place TBD"
+        start_date: Optional[date_cls] = None
+
+        # Primary source: date/place shown in heading small text, for example:
+        # <h2>IETF 127 <small>2026-11-14, San Francisco, US</small></h2>
+        heading_small = heading.find("small")
+        if heading_small is not None:
+            compact_small = _normalize_whitespace(heading_small.get_text(" ", strip=True))
+            small_match = re.match(r"^(\d{4}-\d{2}-\d{2})\s*,\s*(.+)$", compact_small)
+            if small_match:
+                dates = small_match.group(1)
+                place = small_match.group(2).strip() or "Place TBD"
+                start_date = _parse_iso_date(dates)
+
+        block_chunks: list[str] = []
+        for sibling in heading.next_siblings:
+            name = getattr(sibling, "name", None)
+            if name in {"h1", "h2", "h3", "h4"}:
+                sibling_text = _normalize_whitespace(
+                    getattr(sibling, "get_text", lambda *_args, **_kwargs: "")(
+                        " ", strip=True
+                    )
+                )
+                if re.search(
+                    r"\bIETF\s*[0-9]{2,3}\b", sibling_text, flags=re.IGNORECASE
+                ):
+                    break
+            block_chunks.append(str(sibling))
+
+        block_soup = BeautifulSoup("".join(block_chunks), "html.parser")
+        block_text = block_soup.get_text("\n", strip=True)
+        lines = [_normalize_whitespace(line) for line in block_text.splitlines()]
+        lines = [line for line in lines if line]
+
+        # Only use line-level date/place parsing when heading-level extraction
+        # did not provide authoritative date/place.
+        if dates == "Dates TBD" or place == "Place TBD":
+            for idx, line in enumerate(lines):
+                # Primary: "<start-date>[<range>] , <place>"
+                line_match = re.match(
+                    r"^(\d{4}-\d{2}-\d{2})(?:\s*(?:to|-|–)\s*(\d{4}-\d{2}-\d{2}))?\s*,\s*(.+)$",
+                    line,
+                )
+                if line_match:
+                    start_raw = line_match.group(1)
+                    place_raw = line_match.group(3).strip()
+                    if start_raw:
+                        dates = start_raw
+                        place = place_raw or "Place TBD"
+                        start_date = _parse_iso_date(start_raw)
+                        break
+
+                # Fallback: date and place are split across lines.
+                if re.match(r"^\d{4}-\d{2}-\d{2}$", line):
+                    maybe_place = lines[idx + 1] if idx + 1 < len(lines) else ""
+                    maybe_place_lower = maybe_place.lower()
+                    if maybe_place and "date weekday description" not in maybe_place_lower:
+                        # Guard: avoid misclassifying weekday table column as place.
+                        if maybe_place_lower in {
+                            "monday",
+                            "tuesday",
+                            "wednesday",
+                            "thursday",
+                            "friday",
+                            "saturday",
+                            "sunday",
+                            "week of",
+                        }:
+                            continue
+                        dates = line
+                        place = maybe_place
+                        start_date = _parse_iso_date(line)
+                        break
+
+        # Global fallback: find date/place from full-page text near "IETF <number>".
+        if dates == "Dates TBD" or place == "Place TBD":
+            for idx, line in enumerate(page_lines):
+                if not re.search(
+                    rf"\bIETF\s*{re.escape(meeting_number)}\b",
+                    line,
+                    flags=re.IGNORECASE,
+                ):
+                    continue
+                for probe in page_lines[idx + 1 : idx + 8]:
+                    probe_match = re.match(
+                        r"^(\d{4}-\d{2}-\d{2})(?:\s*(?:to|-|–)\s*(\d{4}-\d{2}-\d{2}))?\s*,\s*(.+)$",
+                        probe,
+                    )
+                    if not probe_match:
+                        continue
+                    dates = probe_match.group(1)
+                    place = probe_match.group(3).strip() or "Place TBD"
+                    start_date = _parse_iso_date(dates)
+                    break
+                if dates != "Dates TBD" and place != "Place TBD":
+                    break
+
+        important_dates: dict[str, str] = {}
+        for row in block_soup.find_all("tr"):
+            cells = [
+                _normalize_whitespace(cell.get_text(" ", strip=True))
+                for cell in row.find_all(["td", "th"])
+            ]
+            if len(cells) < 2:
+                continue
+            date_cell = cells[0]
+            description = cells[-1]
+            if not re.match(r"^\d{4}-\d{2}-\d{2}$", date_cell):
+                continue
+            label = _important_date_label(description)
+            if label and label not in important_dates:
+                important_dates[label] = date_cell
+
+        # Fallback in case table rows are unavailable in page rendering.
+        if len(important_dates) < len(IMPORTANT_DATE_DESCRIPTORS):
+            for line in block_text.splitlines():
+                compact = _normalize_whitespace(line)
+                fallback_match = re.match(
+                    r"^(\d{4}-\d{2}-\d{2})\s+\w+\s+(.+)$", compact
+                )
+                if not fallback_match:
+                    continue
+                date_cell = fallback_match.group(1)
+                description = fallback_match.group(2)
+                label = _important_date_label(description)
+                if label and label not in important_dates:
+                    important_dates[label] = date_cell
+
+        if meeting_number not in events:
+            events[meeting_number] = {
+                "number": meeting_number,
+                "dates": dates,
+                "place": place,
+                "start_date": start_date,
+                "important_dates": important_dates,
+            }
+
+    ordered = sorted(
+        events.values(),
+        key=lambda item: (
+            item["start_date"] or date_cls.max,
+            int(item["number"]),
+        ),
+    )
+    return ordered
+
+
+def _build_upcoming_events_header(
+    events: list[dict[str, Any]],
+) -> str:
+    lines = ["Next IETF events planned and dates and location:"]
+    top_events = events[:3]
+    for event in top_events:
+        lines.append(
+            f"- IETF {event['number']} - Dates {event['dates']} - Place {event['place']}"
+        )
+
+    for event in top_events:
+        lines.append("")
+        lines.append(f"Important details (IETF {event['number']}):")
+        lines.append(
+            f"- IETF Online Registration Opens: {event['important_dates'].get('IETF Online Registration Opens', 'Not found')}"
+        )
+        lines.append(
+            f"- Final agenda to be published: {event['important_dates'].get('Final agenda to be published', 'Not found')}"
+        )
+        lines.append(
+            f"- Agenda link - for IETF-{event['number']}: {MEETING_AGENDA_TXT_URL_TEMPLATE.format(number=event['number'])}"
+        )
+        lines.append(
+            f"- Internet-Draft submission cut-off: {event['important_dates'].get('Internet-Draft submission cut-off', 'Not found')}"
+        )
+        lines.append(
+            f"- Registration cancellation cut-off: {event['important_dates'].get('Registration cancellation cut-off', 'Not found')}"
+        )
+    return "\n".join(lines)
+
+
+def _agenda_txt_non_boilerplate_lines(
+    agenda_text: str, meeting_number: str
+) -> list[str]:
+    out: list[str] = []
+    header_re = re.compile(
+        rf"^ietf\s*{re.escape(meeting_number)}\s+agenda\s+as\s+of\b",
+        flags=re.IGNORECASE,
+    )
+    for raw_line in agenda_text.splitlines():
+        line = _normalize_whitespace(raw_line)
+        if not line:
+            continue
+        lowered = line.lower()
+        if header_re.match(line):
+            continue
+        if lowered.startswith("agenda as of "):
+            continue
+        if lowered.startswith("ietf ") and "agenda as of" in lowered:
+            continue
+        if lowered.startswith("times are ") or "all times are" in lowered:
+            continue
+        if re.fullmatch(r"[-=*_ ]+", line):
+            continue
+        out.append(line)
+    return out
+
+
+def _agenda_txt_looks_minimal(
+    agenda_text: str, meeting_number: str
+) -> bool:
     """
+    Detect low-content agenda.txt payloads that only contain boilerplate.
+
+    REQ-FEAT-008 context: when agenda publication is pending, agenda.txt
+    commonly has only a timestamp/header and little or no content.
+    """
+    non_boilerplate = _agenda_txt_non_boilerplate_lines(
+        agenda_text=agenda_text,
+        meeting_number=meeting_number,
+    )
+    if not non_boilerplate:
+        return True
+    if len(non_boilerplate) <= 5:
+        return True
+    return False
+
+
+def _parse_iso_date(value: str) -> Optional[date_cls]:
+    if not value:
+        return None
+    try:
+        return date_cls.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def _build_agenda_not_published_notice(
+    meeting_number: str,
+    final_agenda_date: str,
+) -> str:
+    return (
+        f"Agenda is NOT yet published, for this IETF-{meeting_number},"
+        f"Final agenda will be published on {final_agenda_date}."
+    )
+
+
+def _index_wg_lines_from_agenda_txt(
+    agenda_text: str, wg_acronyms: set[str]
+) -> dict[str, list[str]]:
+    indexed: dict[str, list[str]] = {acronym: [] for acronym in wg_acronyms}
+    seen: dict[str, set[str]] = {acronym: set() for acronym in wg_acronyms}
+
+    for raw_line in agenda_text.splitlines():
+        line = _normalize_whitespace(raw_line)
+        if not line:
+            continue
+        tokens = set(re.findall(r"[a-z0-9-]+", line.lower()))
+        matched = tokens & wg_acronyms
+        if not matched:
+            continue
+        for acronym in matched:
+            if line in seen[acronym]:
+                continue
+            seen[acronym].add(line)
+            indexed[acronym].append(line)
+    return indexed
+
+
+def _summarize_wg_agenda_from_lines(lines: list[str]) -> str:
+    if not lines:
+        return "Agenda summary unavailable."
+    filtered = [
+        line for line in lines if "agenda as of" not in line.lower()
+    ] or lines
+    selected = filtered[:2]
+    return "; ".join(selected)
+
+
+def _fetch_upcoming_ietf_agenda_legacy(
+    groups: Iterable[WorkingGroup], timeout: int = HTTP_TIMEOUT_SECONDS
+) -> tuple[str, list[UpcomingAgendaItem]]:
     try:
         idx_resp = requests.get(MEETINGS_INDEX_URL, timeout=timeout)
         idx_resp.raise_for_status()
     except requests.RequestException as exc:
-        raise DatatrackerError(f"Unable to fetch IETF meetings index: {exc}") from exc
+        raise DatatrackerError(_access_error(MEETINGS_INDEX_URL, exc)) from exc
 
     meeting_number = _extract_next_meeting_number(idx_resp.text)
     if not meeting_number:
@@ -2379,7 +2713,7 @@ def fetch_upcoming_ietf_agenda(
         mtg_resp = requests.get(meeting_page, timeout=timeout)
         mtg_resp.raise_for_status()
     except requests.RequestException as exc:
-        raise DatatrackerError(f"Unable to fetch meeting page: {exc}") from exc
+        raise DatatrackerError(_access_error(meeting_page, exc)) from exc
 
     dates, place = _extract_meeting_dates_and_place(mtg_resp.text)
     header = f"IETF {meeting_number} - {dates} - {place}"
@@ -2417,34 +2751,105 @@ def fetch_upcoming_ietf_agenda(
     return header, items
 
 
-def _find_last_completed_meeting(timeout: int = 20) -> tuple[str, str]:
+def fetch_upcoming_ietf_agenda(
+    groups: Iterable[WorkingGroup], timeout: int = HTTP_TIMEOUT_SECONDS
+) -> tuple[str, list[UpcomingAgendaItem]]:
+    """
+    Fetch next IETF meeting metadata and summarize available WG agendas.
+
+    For each WG, agenda is included only if present (typically published shortly
+    before the meeting).
+    """
+    try:
+        important_resp = requests.get(IMPORTANT_DATES_URL, timeout=timeout)
+        important_resp.raise_for_status()
+    except requests.RequestException as exc:
+        raise DatatrackerError(_access_error(IMPORTANT_DATES_URL, exc)) from exc
+
+    events = _parse_upcoming_events_from_important_dates(important_resp.text)
+    if not events:
+        return _fetch_upcoming_ietf_agenda_legacy(groups, timeout=timeout)
+
+    today = date_cls.today()
+    selected = next(
+        (
+            event
+            for event in events
+            if event["start_date"] is None or event["start_date"] >= today
+        ),
+        events[0],
+    )
+    meeting_number = selected["number"]
+    # User-visible contract: always print top 3 planned IETF events from page.
+    header = _build_upcoming_events_header(events)
+
+    agenda_url = MEETING_AGENDA_TXT_URL_TEMPLATE.format(number=meeting_number)
+    try:
+        agenda_txt_resp = requests.get(agenda_url, timeout=timeout)
+        agenda_txt_resp.raise_for_status()
+        agenda_txt = agenda_txt_resp.text
+    except requests.RequestException as exc:
+        # Fallback to legacy per-WG meetings traversal if agenda.txt fetch fails,
+        # but preserve explicit URL-level failure information for user output.
+        legacy_header, legacy_items = _fetch_upcoming_ietf_agenda_legacy(
+            groups, timeout=timeout
+        )
+        legacy_header = f"{legacy_header}\n\n{_access_error(agenda_url, exc)}"
+        return legacy_header, legacy_items
+
+    agenda_is_minimal = _agenda_txt_looks_minimal(
+        agenda_text=agenda_txt,
+        meeting_number=meeting_number,
+    )
+    items: list[UpcomingAgendaItem] = []
+
+    final_agenda_date = selected["important_dates"].get("Final agenda to be published", "")
+    parsed_final_agenda_date = _parse_iso_date(final_agenda_date)
+    if (
+        agenda_is_minimal
+        and parsed_final_agenda_date is not None
+        and today < parsed_final_agenda_date
+    ):
+        header = (
+            f"{header}\n\n"
+            f"{_build_agenda_not_published_notice(meeting_number, final_agenda_date)}"
+        )
+
+    return header, items
+
+
+def _find_last_completed_meeting(timeout: int = HTTP_TIMEOUT_SECONDS) -> tuple[str, str]:
     try:
         idx_resp = requests.get(MEETINGS_INDEX_URL, timeout=timeout)
         idx_resp.raise_for_status()
     except requests.RequestException as exc:
-        raise DatatrackerError(f"Unable to fetch IETF meetings index: {exc}") from exc
+        raise DatatrackerError(_access_error(MEETINGS_INDEX_URL, exc)) from exc
 
     numbers = _extract_meeting_numbers(idx_resp.text)
     if not numbers:
         raise DatatrackerError("Unable to determine IETF meeting list")
 
     today = date_cls.today()
+    last_page_error: Optional[str] = None
     for number in numbers:
         page_url = MEETING_PAGE_URL_TEMPLATE.format(number=number)
         try:
             page_resp = requests.get(page_url, timeout=timeout)
             page_resp.raise_for_status()
-        except requests.RequestException:
+        except requests.RequestException as exc:
+            last_page_error = _access_error(page_url, exc)
             continue
         end_date = _extract_meeting_end_date(page_resp.text)
         if end_date is None or end_date <= today:
             return number, page_resp.text
 
+    if last_page_error:
+        raise DatatrackerError(last_page_error)
     raise DatatrackerError("Unable to determine last completed IETF meeting")
 
 
 def fetch_summary_of_last_ietf_meeting(
-    groups: Iterable[WorkingGroup], timeout: int = 20
+    groups: Iterable[WorkingGroup], timeout: int = HTTP_TIMEOUT_SECONDS
 ) -> tuple[str, list[LastMeetingItem]]:
     """Find last completed IETF meeting and summarize WG meeting minutes."""
     meeting_number, meeting_html = _find_last_completed_meeting(timeout=timeout)

@@ -176,9 +176,18 @@ Maintainer scope in the same codebase:
 - Supports ad-hoc run and scheduler mode.
 
 ### 7.7 Agenda of Upcoming IETF Meeting
-- Find next IETF meeting metadata first (number, dates, location).
-- Traverse WG meeting info and include only WGs where agenda is published.
-- Skip WGs with no agenda yet.
+- Parse next planned IETF events from `https://datatracker.ietf.org/meeting/important-dates/`.
+- Include required milestone details for upcoming events:
+  - IETF Online Registration Opens
+  - Final agenda to be published
+  - Internet-Draft submission cut-off
+  - Registration cancellation cut-off
+- Agenda link for each event (`meeting/<number>/agenda.txt`).
+- Fetch `https://datatracker.ietf.org/meeting/<number>/agenda.txt`.
+- Do not print WG agenda body content in this feature output; print links and milestones.
+- If agenda text is still boilerplate and current date is before the final-agenda
+  publish date, return explicit "Agenda is NOT yet published..." guidance with
+  the milestone date.
 
 ### 7.8 Summary of Last IETF Meeting
 - Find most recent completed IETF meeting.
@@ -302,7 +311,7 @@ When adding a feature:
 ## 15. Implementation Status and Gaps
 
 ### Implemented (As-Coded)
-- REQ-FEAT-001..006 onboarding slice is complete in CLI.
+- REQ-FEAT-001..006 + REQ-FEAT-008 onboarding slice is complete in CLI.
 - WG resolve/suggest flow in CLI and MCP.
 - Charter retrieval with complete-charter output in CLI and MCP.
 - Active draft extraction with all-drafts mode in current CLI flow.
@@ -310,7 +319,7 @@ When adding a feature:
 - Last-2-IETF-meeting updates with agenda/minutes formatting.
 - Upcoming and last IETF meeting summaries.
 - Daily delivery and scheduler flows with SMTP retry controls.
-- Iterative CLI navigation (`Back`/`Quit`) across REQ-FEAT-001..006 flow.
+- Iterative CLI navigation (`Back`/`Quit`) across REQ-FEAT-001..006 + REQ-FEAT-008 flow.
 
 ### Partial or Missing Against Requirements
 - Technology-onboarding route is integrated in CLI/MCP, but Webex parity is pending.

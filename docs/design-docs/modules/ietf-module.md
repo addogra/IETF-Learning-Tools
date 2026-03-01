@@ -18,6 +18,8 @@ Centralized integration layer for IETF data retrieval, parsing, normalization, a
 - WG index: `https://datatracker.ietf.org/wg/`
 - WG about page: `https://datatracker.ietf.org/wg/{acronym}/about/`
 - WG documents page: `https://datatracker.ietf.org/wg/{acronym}/documents/`
+- IETF important dates: `https://datatracker.ietf.org/meeting/important-dates/`
+- Meeting agenda text: `https://datatracker.ietf.org/meeting/{number}/agenda.txt`
 - Local vector DB: `data/wg_charter_vector_db.json`
 
 ## Contract-Named APIs (Current)
@@ -44,6 +46,15 @@ Current CLI usage notes:
 - REQ-FEAT-003 path uses `get_wg_charter(...)` and returns full charter text.
 - REQ-FEAT-006 path uses `get_wg_last_two_meeting_updates(...)` and filters
   meetings to labels matching `IETF <number>`.
+- REQ-FEAT-008 path uses `get_upcoming_ietf_agenda_summary()` and:
+  - parses upcoming events from `important-dates`,
+  - extracts required milestone details per upcoming event,
+  - emits agenda link per IETF event (`meeting/<number>/agenda.txt`),
+  - does not emit full WG agenda-body output in this feature response.
+  - if `agenda.txt` is still boilerplate and today's date is before the
+    final-agenda publish milestone, appends an explicit not-yet-published notice.
+  - treats `Preliminary Agenda published` as equivalent milestone evidence for
+    `Final agenda to be published`.
 
 Detailed matrix and status: `docs/design-docs/internal-api-contract.md`
 
@@ -88,6 +99,8 @@ flowchart LR
 - API-first and HTML parsing fallback patterns.
 - Defensive parsing for variant Datatracker layouts.
 - Explicit `DatatrackerError` surfaces for caller-level handling.
+- Network timeout policy: default web timeout is 120 seconds (`HTTP_TIMEOUT_SECONDS`).
+- URL-specific fetch errors: raised messages include the exact unreachable URL.
 - Rebuild tolerates per-WG failures and records them under payload `errors`/`warnings`.
 - Mailarchive date fallback parsing is metadata-focused to avoid false positives from
   subject deadlines such as `(Ends YYYY-MM-DD)`.

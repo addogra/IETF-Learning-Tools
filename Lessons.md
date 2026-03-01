@@ -70,6 +70,15 @@ Purpose: capture durable lessons from implemented features and bug fixes so futu
 - Vector DB quality improved when WG `/documents/` corpus text was included in addition to charter text.
 - Technology onboarding output currently includes score for debug value; UX cleanup to hide score by default is tracked debt.
 - Discussion summaries are highly sensitive to date parsing; metadata-first extraction is the stable approach.
+- Upcoming agenda extraction needs publication-readiness logic: minimal `agenda.txt` should
+  be interpreted with important-dates milestones so users get a deterministic
+  "not yet published" message instead of empty/noisy WG results.
+- For REQ-FEAT-008 user-facing output, event-level milestone details + agenda links are more
+  reliable than WG-level agenda-body rendering and reduce parser fragility.
+- Small onboarding guidance at the exact decision moment is effective: print
+  the IETF new-participant link right after Type-A WG confirmation, not before.
+- A single network policy avoids drift: default web timeout at 120 seconds and
+  URL-specific error messages makes operations failures diagnosable in CLI/MCP output.
 
 ## Update Template (Use For New Entries)
 - Date:

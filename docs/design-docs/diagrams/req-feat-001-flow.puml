@@ -18,6 +18,7 @@ start
 if (matches found?) then (yes)
   :Display ranked WG list;
   :User selects WG (1..N);
+  :Print new-participant onboarding link\nhttps://www.ietf.org/meeting/new-participants/;
   :Return selected canonical WG;
 else (no)
   :Show no-match guidance;

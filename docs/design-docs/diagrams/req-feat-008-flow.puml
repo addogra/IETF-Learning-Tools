@@ -1,0 +1,29 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Helvetica
+skinparam ArrowColor #1F2937
+skinparam activity {
+  FontColor #111827
+  BorderColor #1F2937
+  BackgroundColor #F9FAFB
+}
+title REQ-FEAT-008 - Agenda of Upcoming IETF Meeting
+start
+:User selects option 5;
+:Call get_upcoming_ietf_agenda_summary();
+:Fetch https://datatracker.ietf.org/meeting/important-dates/\n(timeout: 120s);
+if (important-dates fetch failed?) then (yes)
+  :Return URL-specific access error;
+  stop
+endif
+:Parse upcoming events (IETF 125/126/127 style)\nwith date and place;
+:Extract important details per event:\nregistration open, final agenda date,\nI-D cutoff, cancellation cutoff;
+:Build agenda link per event\nhttps://datatracker.ietf.org/meeting/<number>/agenda.txt;
+:Fetch next-event agenda.txt\n(timeout: 120s);
+if (agenda.txt minimal and before final agenda date?) then (yes)
+  :Append notice:\nAgenda is NOT yet published ...;
+endif
+:Render output:\nnext events + Important details\n+ agenda links only (no WG agenda body);
+stop
+@enduml

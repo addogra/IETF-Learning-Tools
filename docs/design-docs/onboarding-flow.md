@@ -48,6 +48,7 @@ flowchart LR
 PlantUML architecture artifact for onboarding slice:
 - `docs/design-docs/diagrams/req-feat-001-006-architecture.puml`
 - `docs/design-docs/diagrams/req-feat-001-006-architecture.svg`
+  - includes REQ-FEAT-001..006 plus REQ-FEAT-008 option flow.
 
 ## Contribution Flow
 

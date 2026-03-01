@@ -33,12 +33,16 @@ Known requirement gaps:
 - Supports two start user types in CLI:
   - New engineer: technology onboarding query.
   - Experienced engineer: WG name (short or full form).
+- After a new engineer confirms a WG from technology matches, CLI prints a
+  new-participant onboarding reference:
+  - `https://www.ietf.org/meeting/new-participants/`
 - Resolves technology/WG input against the local charter vector DB with Datatracker fallback.
 - Provides:
   - `Summary of WG` with complete charter text (non-truncated).
   - `Active drafts` returning the latest 10 parsed active drafts with identifier/title/status.
   - `Draft discussions in a WG (last 3 months)` with topic/participant/thread summary.
   - `Updates from last 2 IETF meetings` with agenda and minutes links.
+  - `Agenda of upcoming IETF meeting` with next planned events, important details, and per-IETF agenda links.
 - Includes daily runner and scheduler entrypoints for later requirement phases.
 
 ## Install (Cross-Platform)
@@ -146,12 +150,15 @@ Prompts:
 
 - `Select user type (1 or 2)`
 - User type `1`: `What technology area are you interested in?`
+- After user type `1` confirms WG selection, CLI prints:
+  - `If you want to know what a new participant should do in IETF, here is a useful link: https://www.ietf.org/meeting/new-participants/`
 - User type `2`: `What Working Group are you interested in?`
 - Selection prompt: `Select 1-<n> to continue with a WG:`
 - Option `1. Summary of WG` (complete charter text, non-truncated)
 - Option `2. Active drafts` (latest 10 active drafts with identifier/title/status)
 - Option `3. Draft discussions in a WG (last 3 months)`
 - Option `4. Updates from last 2 IETF meetings` (agenda and minutes)
+- Option `5. Agenda of upcoming IETF meeting` (important-dates + agenda.txt links)
 - WG feature-menu navigation: `b` (back to previous menu), `q` (quit)
 
 ## Run daily job manually

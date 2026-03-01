@@ -29,8 +29,8 @@ Use it before changing parsing logic, runtime flows, or module interfaces.
 - `internal-api-contract.md`: normative REQ-API name matrix and wrapper mappings.
 - `../../SKILLS.md`: skill registry for feature-level operational contracts.
 - `vector-db-implementation-walkthrough.md`: implementation decisions + step-by-step flow for charter vector DB and maintainer commands.
-- `diagrams/req-feat-001-006-architecture.puml`: PlantUML source for complete onboarding slice architecture.
-- `diagrams/req-feat-001-006-architecture.svg`: rendered architecture diagram for REQ-FEAT-001..006.
+- `diagrams/req-feat-001-006-architecture.puml`: PlantUML source for complete onboarding slice architecture (REQ-FEAT-001..006 + REQ-FEAT-008).
+- `diagrams/req-feat-001-006-architecture.svg`: rendered architecture diagram for REQ-FEAT-001..006 + REQ-FEAT-008.
 - Per-feature PlantUML flows (source + render):
   - `diagrams/req-feat-001-flow.puml` / `diagrams/req-feat-001-flow.svg`
   - `diagrams/req-feat-002-flow.puml` / `diagrams/req-feat-002-flow.svg`
@@ -38,6 +38,8 @@ Use it before changing parsing logic, runtime flows, or module interfaces.
   - `diagrams/req-feat-004-flow.puml` / `diagrams/req-feat-004-flow.svg`
   - `diagrams/req-feat-005-flow.puml` / `diagrams/req-feat-005-flow.svg`
   - `diagrams/req-feat-006-flow.puml` / `diagrams/req-feat-006-flow.svg`
+  - `diagrams/req-feat-007-flow.puml` / `diagrams/req-feat-007-flow.svg`
+  - `diagrams/req-feat-008-flow.puml` / `diagrams/req-feat-008-flow.svg`
 
 ## Module Design Docs
 - `modules/cli-module.md`: CLI implementation and control flow.

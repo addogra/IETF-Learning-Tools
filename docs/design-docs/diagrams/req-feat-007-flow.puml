@@ -1,0 +1,23 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Helvetica
+skinparam ArrowColor #1F2937
+skinparam activity {
+  FontColor #111827
+  BorderColor #1F2937
+  BackgroundColor #F9FAFB
+}
+title REQ-FEAT-007 - Daily Updates
+start
+:Load user subscriptions;
+:For each subscribed WG fetch last-day discussions;
+if (Any new discussions?) then (yes)
+  :Build per-user daily discussion summary;
+  :Send notification/report;
+else (no)
+  :Skip outbound update for that user/WG;
+endif
+:Persist report/log output;
+stop
+@enduml

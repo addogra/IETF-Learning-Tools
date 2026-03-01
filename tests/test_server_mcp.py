@@ -198,3 +198,43 @@ def test_updates_from_last_2_ietf_meetings_formats_agenda_and_minutes(monkeypatc
     assert "Agendas:" in out
     assert "Minutes:" in out
     assert "IETF 122" in out
+
+
+def test_agenda_of_upcoming_ietf_meeting_output_format(monkeypatch):
+    server = _reload_server_module(with_fake_mcp=True)
+
+    class _WG:
+        def __init__(self, acronym: str, name: str):
+            self.acronym = acronym
+            self.name = name
+
+    monkeypatch.setattr(
+        server,
+        "fetch_working_groups",
+        lambda: [_WG("lsr", "Link State Routing"), _WG("bess", "BGP Enabled ServiceS")],
+    )
+    monkeypatch.setattr(
+        server,
+        "fetch_upcoming_ietf_agenda",
+        lambda _groups: (
+            "Next IETF events planned and dates and location:\n"
+            "- IETF 125 - Dates 2026-03-14 - Place Shenzhen, CN\n"
+            "- IETF 126 - Dates 2026-07-18 - Place Vienna, AT\n"
+            "- IETF 127 - Dates 2026-11-14 - Place San Francisco, US\n\n"
+            "Important details (IETF 125):\n"
+            "- IETF Online Registration Opens: 2025-09-22\n"
+            "- Final agenda to be published: 2026-03-09\n"
+            "- Agenda link - for IETF-125: https://datatracker.ietf.org/meeting/125/agenda.txt\n"
+            "- Internet-Draft submission cut-off: 2026-03-02\n"
+            "- Registration cancellation cut-off: 2026-03-16",
+            [],
+        ),
+    )
+
+    out = server.mcp.tools["agenda_of_upcoming_ietf_meeting"]()
+    assert "Next IETF events planned and dates and location:" in out
+    assert "IETF 125 - Dates 2026-03-14 - Place Shenzhen, CN" in out
+    assert "Important details (IETF 125):" in out
+    assert "Agenda link - for IETF-125: https://datatracker.ietf.org/meeting/125/agenda.txt" in out
+    assert "Working Group " not in out
+    assert "meeting/125/agenda.txt" in out

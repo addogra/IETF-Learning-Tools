@@ -4,7 +4,7 @@
 ## Active Execution Plan
 
 - `docs/exec-plans/active/2026-02-28-requirements-parity-phase-1.md`
-  - Focus: remaining high-impact gaps after REQ-FEAT-001..006 completion.
+  - Focus: remaining high-impact gaps after REQ-FEAT-001..006 + REQ-FEAT-008 completion.
   - Includes: draft-tracker route and delivery-mode parity path.
 
 ## Recently Completed
@@ -21,6 +21,8 @@
   - Outcome: architecture/design/onboarding/tech-debt sync for completed REQ-FEAT-001..005, PlantUML architecture artifact, and parser-date regression notes.
 - `docs/exec-plans/completed/2026-03-01-req-feat-006-last-two-ietf-meetings.md`
   - Outcome: CLI option 4, IETF-number meeting filtering, agenda/minutes formatting, tests, and per-feature PlantUML diagrams.
+- `docs/exec-plans/completed/2026-03-01-req-feat-008-upcoming-agenda-important-dates.md`
+  - Outcome: CLI option 5, important-dates + agenda.txt parsing, required milestone-date output, tests, and PlantUML updates.
 
 ## Near-Term Priorities
 

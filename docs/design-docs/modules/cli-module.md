@@ -1,7 +1,7 @@
 # CLI Module (`src/ietf_wg_agent/cli.py`)
 
 ## Purpose
-Provide interactive user flow for REQ-FEAT-001..006 with explicit iterative navigation.
+Provide interactive user flow for REQ-FEAT-001..006 and REQ-FEAT-008 with explicit iterative navigation.
 
 ## User Types
 - User Type A (new engineer): technology onboarding query.
@@ -11,6 +11,8 @@ Provide interactive user flow for REQ-FEAT-001..006 with explicit iterative navi
 1. Render top-level user-type menu.
 2. Resolve WG:
    - Type A: technology query -> vector DB matches -> user selects WG.
+   - After Type A WG confirmation, print new-participant onboarding link:
+     `https://www.ietf.org/meeting/new-participants/`.
    - Type B: WG query -> resolution/suggestions -> user selects WG.
 3. Enter WG feature menu.
 4. Execute selected option:
@@ -18,6 +20,7 @@ Provide interactive user flow for REQ-FEAT-001..006 with explicit iterative navi
    - 2: Active drafts (latest 10 active drafts with identifier/title/status)
    - 3: Draft discussions in a WG (last 3 months summary)
    - 4: Updates from last 2 IETF meetings (agenda/minutes links)
+   - 5: Agenda of upcoming IETF meeting (events + important details + agenda links)
 5. After every action, return to WG feature menu.
 6. Navigation is explicit at all levels:
    - `b` -> go back to previous menu
@@ -36,6 +39,7 @@ Prompt contract details:
 - Active drafts: `get_wg_active_drafts(..., limit=10)`
 - Discussions summary: `get_wg_discussion_summary(..., window_days=90)`
 - Meeting updates: `get_wg_last_two_meeting_updates(...)`
+- Upcoming meeting agenda: `get_upcoming_ietf_agenda_summary()`
 
 ## Error Handling
 - Invalid selection or empty input prints guidance and keeps user in current step.
