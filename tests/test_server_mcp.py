@@ -149,3 +149,52 @@ def test_active_drafts_tool_uses_limit_10(monkeypatch):
     out = server.mcp.tools["active_drafts"]("LSR")
     assert limits == [10]
     assert "draft-ietf-lsr-example-00" in out
+
+
+def test_updates_from_last_2_ietf_meetings_formats_agenda_and_minutes(monkeypatch):
+    server = _reload_server_module(with_fake_mcp=True)
+
+    class _WG:
+        def __init__(self, acronym: str, name: str):
+            self.acronym = acronym
+            self.name = name
+
+    class _Update:
+        def __init__(self, meeting: str, agendas: list[str], minutes: list[str]):
+            self.meeting = meeting
+            self.agendas = agendas
+            self.minutes = minutes
+
+    monkeypatch.setattr(
+        server,
+        "fetch_working_groups",
+        lambda: [_WG("lsr", "Link State Routing")],
+    )
+    monkeypatch.setattr(
+        server,
+        "resolve_working_group",
+        lambda query, groups: _WG("lsr", "Link State Routing"),
+    )
+    monkeypatch.setattr(
+        server,
+        "fetch_updates_from_last_two_meetings",
+        lambda acronym, limit=2: [
+            _Update(
+                meeting="IETF 122",
+                agendas=["https://datatracker.ietf.org/meeting/122/materials/agenda-wg-lsr"],
+                minutes=["https://datatracker.ietf.org/meeting/122/materials/minutes-wg-lsr"],
+            ),
+            _Update(
+                meeting="IETF 121",
+                agendas=[],
+                minutes=["https://datatracker.ietf.org/meeting/121/materials/minutes-wg-lsr"],
+            ),
+        ],
+    )
+
+    out = server.mcp.tools["updates_from_last_2_ietf_meetings"]("LSR")
+    assert "WG: LSR - Link State Routing" in out
+    assert "Updates from last 2 IETF meetings:" in out
+    assert "Agendas:" in out
+    assert "Minutes:" in out
+    assert "IETF 122" in out

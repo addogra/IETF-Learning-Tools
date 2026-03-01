@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """Interactive CLI orchestration.
 
-REQ-FEAT-001..005 flow in this module:
+REQ-FEAT-001..006 flow in this module:
 1) Select user type (new engineer vs experienced engineer).
 2) Resolve WG by technology query or WG name.
 3) Run iterative WG feature menu with Back/Quit navigation.
@@ -12,12 +12,14 @@ from ietf_wg_agent.ietf import (
     DatatrackerError,
     DiscussionSummary,
     DraftResult,
+    MeetingUpdates,
     WgMatch,
     WgResolutionResult,
     WorkingGroup,
     get_wg_active_drafts,
     get_wg_charter,
     get_wg_discussion_summary,
+    get_wg_last_two_meeting_updates,
     resolve_wg_name,
     suggest_wgs_by_technology,
 )
@@ -68,6 +70,29 @@ def _format_active_drafts(drafts: list[DraftResult]) -> str:
 
 def _format_discussion_summary(summary: DiscussionSummary) -> str:
     return summary.summary
+
+
+def _format_meeting_updates(meeting_updates: MeetingUpdates) -> str:
+    lines = ["Updates from last 2 IETF meetings:"]
+    if not meeting_updates.updates:
+        lines.append("- No IETF meeting updates found.")
+        return "\n".join(lines)
+
+    for update in meeting_updates.updates:
+        lines.append(f"- {update.meeting}")
+        lines.append("  Agenda:")
+        if update.agendas:
+            for agenda in update.agendas:
+                lines.append(f"  - {agenda}")
+        else:
+            lines.append("  - Not found.")
+        lines.append("  Minutes:")
+        if update.minutes:
+            for minute in update.minutes:
+                lines.append(f"  - {minute}")
+        else:
+            lines.append("  - Not found.")
+    return "\n".join(lines)
 
 
 def _resolve_from_technology_flow() -> tuple[str, WorkingGroup | None]:
@@ -164,6 +189,7 @@ def _wg_feature_menu(wg: WorkingGroup) -> str:
         print("1. Summary of WG")
         print("2. Active drafts")
         print("3. Draft discussions in a WG (last 3 months)")
+        print("4. Updates from last 2 IETF meetings")
         print("b. Back")
         print("q. Quit")
 
@@ -187,6 +213,9 @@ def _wg_feature_menu(wg: WorkingGroup) -> str:
             elif option == "3":
                 summary = get_wg_discussion_summary(wg.acronym, window_days=90)
                 print("\n" + _format_discussion_summary(summary))
+            elif option == "4":
+                updates = get_wg_last_two_meeting_updates(wg.acronym)
+                print("\n" + _format_meeting_updates(updates))
             else:
                 print("Unsupported option.")
         except DatatrackerError as exc:

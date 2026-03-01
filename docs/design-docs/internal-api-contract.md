@@ -38,10 +38,15 @@ All contract wrappers return explicit result models declared in `ietf.py`:
 - CLI WG summary route: `src/ietf_wg_agent/cli.py`
   - menu option `1. Summary of WG`
   - powered by `get_wg_charter(...)` (complete charter text)
+- CLI WG meeting-updates route: `src/ietf_wg_agent/cli.py`
+  - menu option `4. Updates from last 2 IETF meetings`
+  - powered by `get_wg_last_two_meeting_updates(...)`
 - MCP technology onboarding tool: `src/ietf_wg_agent/server.py`
   - tool: `technology_onboarding(query, top_k=10, require_all_terms=True)`
 - MCP WG summary tool: `src/ietf_wg_agent/server.py`
   - tool: `summary_of_wg(query)` now returns complete charter text
+- MCP meeting-updates tool: `src/ietf_wg_agent/server.py`
+  - tool: `updates_from_last_2_ietf_meetings(query)`
 
 ## Maintainer Enforcement
 `ietf-wg-maintainer garbage-collector` verifies:

@@ -11,7 +11,7 @@ Control-flow sections in this module:
 Each section uses API-first + HTML fallback parsing to resist layout changes.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from datetime import date as date_cls, datetime, timedelta, timezone
 import hashlib
@@ -77,6 +77,14 @@ class MeetingUpdate:
     meeting: str
     agendas: list[str]
     minutes: list[str]
+    agenda_details: list["MeetingMaterial"] = field(default_factory=list)
+    minutes_details: list["MeetingMaterial"] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class MeetingMaterial:
+    url: str
+    text: str
 
 
 @dataclass(frozen=True)
@@ -2018,26 +2026,30 @@ def _absolute_url(base: str, href: str) -> str:
     return base.rstrip("/") + href
 
 
-def _extract_meeting_label(raw_text: str, fallback: str) -> str:
-    text = re.sub(r"\s+", " ", raw_text).strip()
-    m_num = re.search(r"\bIETF\s*([0-9]{2,3})\b", text, flags=re.IGNORECASE)
-    if m_num:
-        return f"IETF {m_num.group(1)}"
+def _extract_ietf_meeting_number(href: str, raw_text: str) -> Optional[int]:
+    href_match = re.search(r"/meeting/([0-9]{2,3})(?:/|$)", href, flags=re.IGNORECASE)
+    if href_match:
+        return int(href_match.group(1))
 
-    m_name = re.search(
-        r"\b(?:March|April|May|June|July|August|September|October|November|December|January|February)\s+\d{4}\b",
-        text,
-        flags=re.IGNORECASE,
-    )
-    if m_name:
-        return m_name.group(0)
-    return fallback
+    text = re.sub(r"\s+", " ", raw_text).strip()
+    text_match = re.search(r"\bIETF\s*([0-9]{2,3})\b", text, flags=re.IGNORECASE)
+    if text_match:
+        return int(text_match.group(1))
+
+    return None
 
 
 def fetch_updates_from_last_two_meetings(
-    acronym: str, timeout: int = 20, limit: int = 2
+    acronym: str,
+    timeout: int = 20,
+    limit: int = 2,
+    include_material_text: bool = False,
 ) -> list[MeetingUpdate]:
-    """Fetch agenda/minutes links for the most recent WG meetings."""
+    """Fetch agenda/minutes links for the most recent WG meetings.
+
+    When ``include_material_text`` is True, agenda/minutes page content is also
+    fetched and attached under ``agenda_details`` / ``minutes_details``.
+    """
     url = WG_MEETINGS_URL_TEMPLATE.format(acronym=acronym.lower())
     try:
         response = requests.get(url, timeout=timeout)
@@ -2048,9 +2060,7 @@ def fetch_updates_from_last_two_meetings(
     soup = BeautifulSoup(response.text, "html.parser")
     links = soup.find_all("a", href=True)
 
-    by_meeting: dict[str, dict[str, list[str]]] = {}
-    meeting_order: list[str] = []
-    fallback_counter = 0
+    by_meeting_number: dict[int, dict[str, list[str]]] = {}
 
     for link in links:
         href = str(link.get("href", "")).strip()
@@ -2069,30 +2079,55 @@ def fetch_updates_from_last_two_meetings(
         container_text = container.get_text(" ", strip=True)
         heading = container.find_previous(["h2", "h3", "h4"])
         heading_text = heading.get_text(" ", strip=True) if heading else ""
-
-        fallback_counter += 1
-        label = _extract_meeting_label(
-            f"{heading_text} {container_text}", fallback=f"Meeting {fallback_counter}"
+        meeting_number = _extract_ietf_meeting_number(
+            href=href,
+            raw_text=f"{heading_text} {container_text}",
         )
+        # REQ-FEAT-006: include only IETF-number meetings.
+        if meeting_number is None:
+            continue
 
-        if label not in by_meeting:
-            by_meeting[label] = {"agendas": [], "minutes": []}
-            meeting_order.append(label)
+        if meeting_number not in by_meeting_number:
+            by_meeting_number[meeting_number] = {"agendas": [], "minutes": []}
 
         abs_url = _absolute_url("https://datatracker.ietf.org", href)
-        if abs_url not in by_meeting[label][kind]:
-            by_meeting[label][kind].append(abs_url)
+        if abs_url not in by_meeting_number[meeting_number][kind]:
+            by_meeting_number[meeting_number][kind].append(abs_url)
 
+    material_cache: dict[tuple[str, str], str] = {}
     updates: list[MeetingUpdate] = []
-    for label in meeting_order:
-        payload = by_meeting[label]
+    for meeting_number in sorted(by_meeting_number.keys(), reverse=True):
+        payload = by_meeting_number[meeting_number]
         if not payload["agendas"] and not payload["minutes"]:
             continue
+        agenda_details: list[MeetingMaterial] = []
+        minutes_details: list[MeetingMaterial] = []
+        if include_material_text:
+            for agenda_url in payload["agendas"]:
+                agenda_details.append(
+                    _fetch_meeting_material_detail(
+                        url=agenda_url,
+                        kind="agenda",
+                        timeout=timeout,
+                        cache=material_cache,
+                    )
+                )
+            for minutes_url in payload["minutes"]:
+                minutes_details.append(
+                    _fetch_meeting_material_detail(
+                        url=minutes_url,
+                        kind="minutes",
+                        timeout=timeout,
+                        cache=material_cache,
+                    )
+                )
         updates.append(
             MeetingUpdate(
-                meeting=label,
+                meeting=f"IETF {meeting_number}",
                 agendas=payload["agendas"],
                 minutes=payload["minutes"],
+                agenda_details=agenda_details,
+                minutes_details=minutes_details,
             )
         )
         if len(updates) >= limit:
@@ -2195,15 +2230,14 @@ def _extract_agenda_body(html: str) -> str:
                 break
             get_text = getattr(sibling, "get_text", None)
             if callable(get_text):
-                text = get_text(" ", strip=True)
+                text = get_text("\n", strip=True)
                 if text:
                     chunks.append(text)
-        body = " ".join(chunks).strip()
+        body = "\n\n".join(chunks).strip()
         if body:
             return body
 
-    text = soup.get_text(" ", strip=True)
-    return re.sub(r"\s+", " ", text).strip()
+    return soup.get_text("\n", strip=True)
 
 
 def _extract_minutes_body(html: str) -> str:
@@ -2220,14 +2254,51 @@ def _extract_minutes_body(html: str) -> str:
                 break
             get_text = getattr(sibling, "get_text", None)
             if callable(get_text):
-                text = get_text(" ", strip=True)
+                text = get_text("\n", strip=True)
                 if text:
                     chunks.append(text)
-        body = " ".join(chunks).strip()
+        body = "\n\n".join(chunks).strip()
         if body:
             return body
-    text = soup.get_text(" ", strip=True)
-    return re.sub(r"\s+", " ", text).strip()
+    return soup.get_text("\n", strip=True)
+
+
+def _extract_page_text(html: str) -> str:
+    soup = BeautifulSoup(html, "html.parser")
+    for tag in soup.find_all(["script", "style", "noscript"]):
+        tag.decompose()
+    return soup.get_text("\n", strip=True)
+
+
+def _fetch_meeting_material_detail(
+    url: str,
+    kind: str,
+    timeout: int,
+    cache: dict[tuple[str, str], str],
+) -> MeetingMaterial:
+    key = (kind, url)
+    cached = cache.get(key)
+    if cached is not None:
+        return MeetingMaterial(url=url, text=cached)
+
+    try:
+        response = requests.get(url, timeout=timeout)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        text = f"Unable to fetch material content: {exc}"
+        cache[key] = text
+        return MeetingMaterial(url=url, text=text)
+
+    if kind == "agenda":
+        text = _extract_agenda_body(response.text)
+    else:
+        text = _extract_minutes_body(response.text)
+
+    if not text:
+        text = _extract_page_text(response.text)
+
+    cache[key] = text
+    return MeetingMaterial(url=url, text=text)
 
 
 def _summarize_agenda_text(text: str) -> str:

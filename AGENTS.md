@@ -20,9 +20,9 @@ Before proposing or writing changes, traverse these files in this exact order:
 Do not start implementation until the above context is loaded and the impacted requirement IDs are identified.
 
 ## Current Product Context Snapshot
-- Onboarding slice `REQ-FEAT-001..005` is implemented in CLI.
+- Onboarding slice `REQ-FEAT-001..006` is implemented in CLI.
 - Maintainer vector DB lifecycle and requirement-named APIs (`REQ-API-001..006`) are implemented.
-- Remaining high-impact gaps are Webex delivery parity, draft-tracker user route, and richer meeting-summary output.
+- Remaining high-impact gaps are Webex delivery parity and draft-tracker user route.
 
 ## How Agents Should Work In This Repo
 - Keep behavior deterministic and parser fallbacks explicit for external HTML/API changes.

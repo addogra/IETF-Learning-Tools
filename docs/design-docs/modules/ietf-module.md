@@ -42,6 +42,8 @@ Current CLI usage notes:
 - REQ-FEAT-005 path uses `get_wg_discussion_summary(..., window_days=90)` and
   labels period as `last 3 months`.
 - REQ-FEAT-003 path uses `get_wg_charter(...)` and returns full charter text.
+- REQ-FEAT-006 path uses `get_wg_last_two_meeting_updates(...)` and filters
+  meetings to labels matching `IETF <number>`.
 
 Detailed matrix and status: `docs/design-docs/internal-api-contract.md`
 
@@ -89,6 +91,8 @@ flowchart LR
 - Rebuild tolerates per-WG failures and records them under payload `errors`/`warnings`.
 - Mailarchive date fallback parsing is metadata-focused to avoid false positives from
   subject deadlines such as `(Ends YYYY-MM-DD)`.
+- Meeting update extraction is constrained to `IETF <number>` meetings and sorted
+  by meeting number descending before applying the `limit`.
 
 ## Output Data Contracts
 - `RebuildResult`: rebuild summary fields (path, timestamp, counts, checksum).

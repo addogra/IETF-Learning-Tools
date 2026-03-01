@@ -1,0 +1,21 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Helvetica
+skinparam ArrowColor #1F2937
+skinparam activity {
+  FontColor #111827
+  BorderColor #1F2937
+  BackgroundColor #F9FAFB
+}
+title REQ-FEAT-003 - Summary of WG (Complete Charter)
+start
+:WG already resolved;
+:User selects option 1;
+:Call get_wg_charter(wg_id);
+:Fetch https://datatracker.ietf.org/wg/<wg>/about/;
+:Extract complete "Charter for Working Group" text;
+:Return complete charter text\n(non-truncated);
+:Render charter in CLI/MCP response;
+stop
+@enduml

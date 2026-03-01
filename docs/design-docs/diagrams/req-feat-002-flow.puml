@@ -1,0 +1,29 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Helvetica
+skinparam ArrowColor #1F2937
+skinparam activity {
+  FontColor #111827
+  BorderColor #1F2937
+  BackgroundColor #F9FAFB
+}
+title REQ-FEAT-002 - WG Name Resolution
+start
+:User selects Type B in CLI;
+:Prompt "What Working Group are you interested in?";
+:Call resolve_wg_name(user_input);
+if (exact match?) then (yes)
+  :Return canonical WG\n(acronym + full name);
+else (no)
+  if (suggestions available?) then (yes)
+    :Display ranked WG suggestions;
+    :User selects one suggestion;
+    :Return canonical WG;
+  else (no)
+    :Show "No WG matched";
+    :Allow retry;
+  endif
+endif
+stop
+@enduml

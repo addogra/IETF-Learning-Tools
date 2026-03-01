@@ -147,9 +147,10 @@ REQ-FEAT-005: "Draft discussions in a WG"
 
 REQ-FEAT-006: "Updates from last 2 IETF meetings"
 - Source: https://datatracker.ietf.org/wg/<wg>/meetings/
+- Only include meetings matching `IETF <number>`.
 - Return updates for last 2 WG meetings including:
-  - agenda summary
-  - minutes summary
+  - agenda
+  - minutes
 
 REQ-FEAT-007: "Daily updates"
 - Source: https://mailarchive.ietf.org/arch/browse/<wg>/
@@ -318,7 +319,7 @@ REQ-DOC-005
 - AC-1: New engineer enters technology phrase and gets ranked relevant WGs with rationale.
 - AC-2: Experienced user enters short/full WG name and gets canonical WG resolution.
 - AC-3: User can retrieve full charter, latest 5 drafts with abstracts, last 3 months discussion summary.
-- AC-4: User can retrieve last 2 WG meeting updates (agenda + minutes summary).
+- AC-4: User can retrieve last 2 WG meeting updates (agenda + minutes).
 - AC-5: Daily update only sends when new mailarchive activity exists.
 - AC-6: Upcoming and last IETF meeting summaries include meeting metadata + WG-level summaries.
 - AC-7: Draft tracker returns timeline/history and related discussion context.

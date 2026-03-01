@@ -1,0 +1,27 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Helvetica
+skinparam ArrowColor #1F2937
+skinparam activity {
+  FontColor #111827
+  BorderColor #1F2937
+  BackgroundColor #F9FAFB
+}
+title REQ-FEAT-001 - New-User Technology Onboarding
+start
+:User selects Type A in CLI;
+:Prompt "What technology area are you interested in?";
+:Call suggest_wgs_by_technology(query, top_k=10, require_all_terms=True);
+:Load vector DB\n(data/wg_charter_vector_db.json);
+:Compute ranked WG matches;
+if (matches found?) then (yes)
+  :Display ranked WG list;
+  :User selects WG (1..N);
+  :Return selected canonical WG;
+else (no)
+  :Show no-match guidance;
+  :Allow retry;
+endif
+stop
+@enduml

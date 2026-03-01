@@ -2,6 +2,8 @@ from ietf_wg_agent import cli
 from ietf_wg_agent.ietf import (
     DiscussionSummary,
     DraftResult,
+    MeetingUpdate,
+    MeetingUpdates,
     WgMatch,
     WgResolutionResult,
     WorkingGroup,
@@ -288,3 +290,65 @@ def test_cli_draft_discussions_last_3_months(monkeypatch, capsys):
     assert calls == [90]
     assert "Draft discussions summary (last 3 months):" in out
     assert "Total discussion posts: 2" in out
+
+
+def test_cli_updates_from_last_two_ietf_meetings(monkeypatch, capsys):
+    _feed_inputs(
+        monkeypatch,
+        [
+            "2",          # user type
+            "LSR",        # WG input
+            "4",          # option: last 2 meetings updates
+            "q",          # quit
+        ],
+    )
+
+    monkeypatch.setattr(
+        cli,
+        "resolve_wg_name",
+        lambda _query: WgResolutionResult(
+            query="LSR",
+            matched=WorkingGroup(acronym="lsr", name="Link State Routing"),
+            suggestions=[],
+        ),
+    )
+
+    calls: list[str] = []
+
+    def _fake_updates(_wg_id: str):
+        calls.append(_wg_id)
+        return MeetingUpdates(
+            wg_id="lsr",
+            wg_name="Link State Routing",
+            updates=[
+                MeetingUpdate(
+                    meeting="IETF 122",
+                    agendas=[
+                        "https://datatracker.ietf.org/meeting/122/materials/agenda-wg-lsr"
+                    ],
+                    minutes=[
+                        "https://datatracker.ietf.org/meeting/122/materials/minutes-wg-lsr"
+                    ],
+                ),
+                MeetingUpdate(
+                    meeting="IETF 121",
+                    agendas=[],
+                    minutes=[
+                        "https://datatracker.ietf.org/meeting/121/materials/minutes-wg-lsr"
+                    ],
+                ),
+            ],
+            source_url="https://datatracker.ietf.org/wg/lsr/meetings/",
+        )
+
+    monkeypatch.setattr(cli, "get_wg_last_two_meeting_updates", _fake_updates)
+
+    cli.main()
+    out = capsys.readouterr().out
+
+    assert calls == ["lsr"]
+    assert "Updates from last 2 IETF meetings:" in out
+    assert "- IETF 122" in out
+    assert "Agenda:" in out
+    assert "Minutes:" in out
+    assert "minutes-wg-lsr" in out

@@ -13,5 +13,5 @@ Product north star:
 - An experienced engineer can query a WG and receive actionable summaries for drafts, discussions, and meetings.
 
 Current product tension:
-- Onboarding flow (`REQ-FEAT-001..005`) is now complete in CLI and covered with tests.
+- Onboarding flow (`REQ-FEAT-001..006`) is now complete in CLI and covered with tests.
 - Remaining roadmap pressure is delivery-mode parity (Webex), draft-tracker route, and richer meeting summaries.

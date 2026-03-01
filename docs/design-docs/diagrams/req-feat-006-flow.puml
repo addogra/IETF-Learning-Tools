@@ -1,0 +1,24 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Helvetica
+skinparam ArrowColor #1F2937
+skinparam activity {
+  FontColor #111827
+  BorderColor #1F2937
+  BackgroundColor #F9FAFB
+}
+title REQ-FEAT-006 - Updates from Last 2 IETF Meetings
+start
+:WG already resolved;
+:User selects option 4;
+:Call get_wg_last_two_meeting_updates(wg_id);
+:Fetch https://datatracker.ietf.org/wg/<wg>/meetings/;
+:Extract agenda/minutes links;
+:Filter meetings to pattern IETF <number> only;
+:Sort by meeting number descending;
+:Limit to last 2 meetings;
+:Format output with explicit Agenda and Minutes sections;
+:Render meeting updates in CLI/MCP;
+stop
+@enduml

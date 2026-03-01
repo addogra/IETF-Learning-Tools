@@ -11,7 +11,6 @@ The codebase already implements core WG resolution, charter/draft/discussion ret
 Primary uncovered requirement clusters:
 - `REQ-MODE-001`: Webex bot delivery mode parity.
 - `REQ-FEAT-010`: draft tracker user-facing route.
-- `REQ-FEAT-006`: meeting update output lacks agenda/minutes summaries.
 
 # Scope
 In scope:
@@ -25,7 +24,7 @@ In scope:
   - technology onboarding prompt/route
   - full charter view mode
   - draft tracker
-  - richer last-2-meetings summaries (agenda + minutes summary text)
+  - last-2-IETF-meetings update flow with agenda/minutes links
 - Add iterative CLI interaction loop with explicit `Quit`.
 - Introduce initial Webex integration surface (command map + adapter scaffold) to unblock parity work.
 - Add maintainer garbage-collector command that reports requirement/documentation/architecture mismatches.
@@ -45,7 +44,7 @@ Out of scope for this phase:
 - Keep existing functions as compatibility wrappers during migration.
 
 3. User Feature Gaps
-- Extend meeting update pipeline to generate short agenda/minutes summaries.
+- Harden meeting update extraction to include only `IETF <number>` meetings.
 - Implement user-facing route for `track_draft_or_rfc(identifier, include_vendor_signals=False)`.
 
 4. Delivery Mode Parity
@@ -68,7 +67,7 @@ Mandatory gate:
 - `python -m pytest -q tests`
 
 # Exit Criteria
-- `REQ-FEAT-006` and `REQ-FEAT-010` implemented with tests.
+- `REQ-FEAT-010` implemented with tests.
 - `REQ-API-001..006` function contracts available and documented.
 - `REQ-MODE-001` no longer blocked by missing Webex surface.
 - Remaining lower-priority issues tracked in `tech-debt-tracker.md`.
@@ -96,10 +95,13 @@ Mandatory gate:
 - Wired user-facing technology onboarding:
   - CLI route via User Type A prompt (`What technology area are you interested in?`).
   - MCP tool `technology_onboarding(query, top_k, require_all_terms)`.
-- Implemented iterative CLI flow for REQ-FEAT-001..005:
+- Implemented iterative CLI flow for REQ-FEAT-001..006:
   - explicit `Back`/`Quit` navigation at user-type, WG-resolution, and feature-menu levels.
 - Implemented REQ-FEAT-005 in CLI feature menu:
   - `Draft discussions in a WG (last 3 months)` from mailarchive via `get_wg_discussion_summary(..., window_days=90)`.
+- Implemented REQ-FEAT-006 in CLI feature menu:
+  - `Updates from last 2 IETF meetings` via `get_wg_last_two_meeting_updates(...)`.
+  - Extraction includes only `IETF <number>` meetings and returns agenda/minutes links.
 - Aligned REQ-FEAT-003 behavior across MCP:
   - `summary_of_wg(query)` now returns complete charter text (non-truncated).
 - Hardened discussion date parsing:
@@ -111,5 +113,4 @@ Mandatory gate:
   - vector DB schema token checks.
 - Remaining in this plan:
   - draft tracker CLI/MCP user-facing route,
-  - Webex parity,
-  - richer last-2-meeting summary enrichment.
+  - Webex parity.

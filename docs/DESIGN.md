@@ -302,17 +302,17 @@ When adding a feature:
 ## 15. Implementation Status and Gaps
 
 ### Implemented (As-Coded)
-- REQ-FEAT-001..005 onboarding slice is complete in CLI.
+- REQ-FEAT-001..006 onboarding slice is complete in CLI.
 - WG resolve/suggest flow in CLI and MCP.
 - Charter retrieval with complete-charter output in CLI and MCP.
 - Active draft extraction with all-drafts mode in current CLI flow.
 - Discussion summaries (3 months and 1 day windows).
+- Last-2-IETF-meeting updates with agenda/minutes formatting.
 - Upcoming and last IETF meeting summaries.
 - Daily delivery and scheduler flows with SMTP retry controls.
-- Iterative CLI navigation (`Back`/`Quit`) across REQ-FEAT-001..005 flow.
+- Iterative CLI navigation (`Back`/`Quit`) across REQ-FEAT-001..006 flow.
 
 ### Partial or Missing Against Requirements
-- Last-2-meeting updates currently emphasize links over agenda/minutes summaries.
 - Technology-onboarding route is integrated in CLI/MCP, but Webex parity is pending.
 - Draft tracker API contract is implemented; user-facing CLI/MCP route is pending.
 - Webex delivery mode is not implemented.

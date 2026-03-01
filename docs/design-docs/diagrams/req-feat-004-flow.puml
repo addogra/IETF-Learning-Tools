@@ -1,0 +1,22 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Helvetica
+skinparam ArrowColor #1F2937
+skinparam activity {
+  FontColor #111827
+  BorderColor #1F2937
+  BackgroundColor #F9FAFB
+}
+title REQ-FEAT-004 - Active Drafts
+start
+:WG already resolved;
+:User selects option 2;
+:Call get_wg_active_drafts(wg_id, limit=10);
+:Fetch https://datatracker.ietf.org/wg/<wg>/documents/;
+:Parse active-draft rows;
+:Enrich draft metadata (status/title via page/API fallback);
+:Build output items\n(identifier + title + status);
+:Render latest 10 drafts in CLI/MCP;
+stop
+@enduml

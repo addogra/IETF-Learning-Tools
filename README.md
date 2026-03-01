@@ -14,11 +14,12 @@ Start here if you are new to the codebase:
 ## Project Status Snapshot (Coded, Not Runtime-Verified Here)
 
 Implemented:
-- REQ-FEAT-001..005 onboarding slice in CLI.
+- REQ-FEAT-001..006 onboarding slice in CLI.
 - WG resolution and ranked suggestions.
 - Complete charter retrieval (non-truncated output in CLI and MCP).
 - Active drafts retrieval (CLI uses latest 10 for performance).
 - WG discussion summaries (last 3 months and last 1 day modes).
+- Last-2-IETF-meeting updates with agenda/minutes extraction.
 - Upcoming IETF agenda summary and last IETF meeting summary.
 - Daily report and email delivery with retry/backoff/jitter.
 - CLI and MCP delivery surfaces for implemented features.
@@ -26,7 +27,6 @@ Implemented:
 Known requirement gaps:
 - Draft tracker user-facing route is not yet exposed in CLI/MCP, but API wrapper is implemented.
 - Webex bot delivery mode is not yet implemented.
-- Last-2-meeting response currently favors links over agenda/minutes summaries.
 
 ## What it does
 
@@ -38,6 +38,7 @@ Known requirement gaps:
   - `Summary of WG` with complete charter text (non-truncated).
   - `Active drafts` returning the latest 10 parsed active drafts with identifier/title/status.
   - `Draft discussions in a WG (last 3 months)` with topic/participant/thread summary.
+  - `Updates from last 2 IETF meetings` with agenda and minutes links.
 - Includes daily runner and scheduler entrypoints for later requirement phases.
 
 ## Install (Cross-Platform)
@@ -150,6 +151,7 @@ Prompts:
 - Option `1. Summary of WG` (complete charter text, non-truncated)
 - Option `2. Active drafts` (latest 10 active drafts with identifier/title/status)
 - Option `3. Draft discussions in a WG (last 3 months)`
+- Option `4. Updates from last 2 IETF meetings` (agenda and minutes)
 - WG feature-menu navigation: `b` (back to previous menu), `q` (quit)
 
 ## Run daily job manually

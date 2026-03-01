@@ -3,7 +3,8 @@
 
 ## Requirement Mapping
 
-- `REQ-FEAT-006`: return updates for last 2 WG meetings including agenda summary + minutes summary.
+- `REQ-FEAT-006`: return updates for last 2 WG meetings including agenda and minutes.
+- Filter rule: only include meetings labeled `IETF <number>`.
 
 ## Input
 WG acronym/name resolved to canonical WG.
@@ -20,11 +21,11 @@ For each of last 2 meetings:
 ## Current Status (Coded, Not Runtime-Verified Here)
 
 - Link extraction for agenda/minutes from last 2 meetings is coded.
-- Meeting label inference is coded.
-- Requirement-level agenda/minutes summary text in this feature path is not fully aligned.
+- Meeting filtering enforces `IETF <number>` matching.
+- Results are sorted by IETF meeting number (newest first) and limited to 2.
 
 Status:
-- `REQ-FEAT-006`: **Partially coded**.
+- `REQ-FEAT-006`: **Coded**.
 
 ## Delivery Surfaces
 - CLI option `4`
@@ -33,4 +34,4 @@ Status:
 
 ## Related Tech Debt
 
-- `TD-005`: meeting update output lacks agenda/minutes summaries.
+- `TD-009`: add fixture-backed meeting-page parser coverage.

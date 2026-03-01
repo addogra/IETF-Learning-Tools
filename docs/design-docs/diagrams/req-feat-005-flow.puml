@@ -1,0 +1,22 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Helvetica
+skinparam ArrowColor #1F2937
+skinparam activity {
+  FontColor #111827
+  BorderColor #1F2937
+  BackgroundColor #F9FAFB
+}
+title REQ-FEAT-005 - Draft Discussions in a WG (Last 3 Months)
+start
+:WG already resolved;
+:User selects option 3;
+:Call get_wg_discussion_summary(wg_id, window_days=90);
+:Fetch https://mailarchive.ietf.org/arch/browse/<wg>/\n(bounded pagination);
+:Parse posts with metadata-first date extraction;
+:Filter to last 90 days;
+:Summarize topics + active participants + recent threads;
+:Render summary and thread links;
+stop
+@enduml

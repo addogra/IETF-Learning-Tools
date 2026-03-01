@@ -21,7 +21,7 @@ This document is the short version and should remain aligned with that guide.
 6. `coding_practices.md`
 7. `docs/DESIGN.md`
 8. `docs/design-docs/index.md`
-9. `docs/exec-plans/completed/2026-03-01-req-feat-001-005-docs-sync.md`
+9. `docs/exec-plans/completed/2026-03-01-req-feat-006-last-two-ietf-meetings.md`
 10. `docs/exec-plans/tech-debt-tracker.md`
 
 ## First Local Run
@@ -46,8 +46,8 @@ flowchart LR
 ```
 
 PlantUML architecture artifact for onboarding slice:
-- `docs/design-docs/diagrams/req-feat-001-005-architecture.puml`
-- `docs/design-docs/diagrams/req-feat-001-005-architecture.svg`
+- `docs/design-docs/diagrams/req-feat-001-006-architecture.puml`
+- `docs/design-docs/diagrams/req-feat-001-006-architecture.svg`
 
 ## Contribution Flow
 

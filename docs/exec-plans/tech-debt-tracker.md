@@ -12,11 +12,6 @@
   - Gap: no dedicated CLI/MCP command path for draft tracking and timeline rendering yet.
   - Next action: add CLI/MCP surfaces for draft tracker output formatting.
 
-- `TD-005` (High) - Last-2-meeting update output lacks summary text
-  - Requirement refs: `REQ-FEAT-006`
-  - Gap: output currently provides agenda/minutes links without agenda/minutes summaries.
-  - Next action: enrich meeting-update model and formatter with short summaries.
-
 - `TD-008` (Low) - Garbage collector depth is limited
   - Requirement refs: `REQ-MAINT-007`
   - Progress: garbage collector includes semantic checks (API-doc alignment, entrypoint alignment, module-index alignment, schema token checks).
@@ -47,4 +42,7 @@
   - Closed by complete charter output in both CLI and MCP `summary_of_wg(...)` path.
 
 - `TD-006` - Iterative CLI UX contract
-  - Closed for REQ-FEAT-001..005 slice with stable `Back`/`Quit` navigation and prompt cleanup.
+  - Closed for REQ-FEAT-001..006 slice with stable `Back`/`Quit` navigation and prompt cleanup.
+
+- `TD-005` - Last-2-IETF-meeting updates in onboarding flow
+  - Closed by REQ-FEAT-006 implementation: CLI option `4` plus IETF-number meeting filtering and agenda/minutes formatting.
