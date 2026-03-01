@@ -2,24 +2,40 @@ from __future__ import annotations
 
 """Interactive CLI orchestration.
 
-Current start-flow scope:
+REQ-FEAT-001..005 flow in this module:
 1) Select user type (new engineer vs experienced engineer).
-2) Resolve WG via technology onboarding or WG-name resolution.
-3) Execute one feature action:
-   - complete charter output,
-   - all active drafts output.
+2) Resolve WG by technology query or WG name.
+3) Run iterative WG feature menu with Back/Quit navigation.
 """
 
 from ietf_wg_agent.ietf import (
     DatatrackerError,
+    DiscussionSummary,
     DraftResult,
     WgMatch,
+    WgResolutionResult,
     WorkingGroup,
     get_wg_active_drafts,
     get_wg_charter,
+    get_wg_discussion_summary,
     resolve_wg_name,
     suggest_wgs_by_technology,
 )
+
+
+NAV_BACK = "__back__"
+NAV_QUIT = "__quit__"
+ACTIVE_DRAFTS_LIMIT = 10
+
+
+def _read_nav_input(prompt: str) -> str:
+    value = input(prompt).strip()
+    low = value.lower()
+    if low in {"b", "back"}:
+        return NAV_BACK
+    if low in {"q", "quit"}:
+        return NAV_QUIT
+    return value
 
 
 def _format_technology_matches(query: str, matches: list[WgMatch]) -> str:
@@ -50,103 +66,168 @@ def _format_active_drafts(drafts: list[DraftResult]) -> str:
     return "\n".join(lines)
 
 
-def _resolve_from_technology_flow() -> WorkingGroup:
-    query = input("What technology area are you interested in? ").strip()
-    if not query:
-        raise DatatrackerError("No technology area supplied.")
-
-    matches = suggest_wgs_by_technology(
-        query=query,
-        top_k=10,
-        require_all_terms=True,
-    )
-    print(_format_technology_matches(query, matches))
-    if not matches:
-        raise DatatrackerError("No WG matched the technology query.")
-
-    choice = input(
-        f"Select 1-{len(matches)} to continue with a WG, "
-        "or press Enter to cancel: "
-    ).strip()
-    if not choice:
-        raise DatatrackerError("Selection cancelled.")
-    if not choice.isdigit():
-        raise DatatrackerError("Invalid selection.")
-
-    selection = int(choice)
-    if selection < 1 or selection > len(matches):
-        raise DatatrackerError("Invalid selection.")
-
-    selected = matches[selection - 1]
-    return WorkingGroup(acronym=selected.acronym.lower(), name=selected.name)
+def _format_discussion_summary(summary: DiscussionSummary) -> str:
+    return summary.summary
 
 
-def _resolve_from_wg_name_flow() -> WorkingGroup:
-    query = input("What Working Group are you interested in? ").strip()
-    if not query:
-        raise DatatrackerError("No working group input supplied.")
+def _resolve_from_technology_flow() -> tuple[str, WorkingGroup | None]:
+    while True:
+        query = _read_nav_input("What technology area are you interested in? ")
+        if query == NAV_BACK:
+            return NAV_BACK, None
+        if query == NAV_QUIT:
+            return NAV_QUIT, None
+        if not query:
+            print("No technology area supplied.")
+            continue
 
-    resolution = resolve_wg_name(query)
-    if resolution.matched:
-        return resolution.matched
+        matches = suggest_wgs_by_technology(
+            query=query,
+            top_k=10,
+            require_all_terms=True,
+        )
+        print(_format_technology_matches(query, matches))
+        if not matches:
+            continue
 
-    suggestions = resolution.suggestions
-    if not suggestions:
-        raise DatatrackerError(f"No WG matched '{query}'.")
+        while True:
+            choice = _read_nav_input(
+                f"Select 1-{len(matches)} to continue with a WG: "
+            )
+            if choice == NAV_BACK:
+                break
+            if choice == NAV_QUIT:
+                return NAV_QUIT, None
+            if not choice.isdigit():
+                print("Invalid selection.")
+                continue
 
-    print(f"No exact WG found for '{query}'. Did you mean:")
-    for idx, candidate in enumerate(suggestions, start=1):
-        print(f"{idx}. {candidate.acronym.upper()} - {candidate.name}")
+            selection = int(choice)
+            if selection < 1 or selection > len(matches):
+                print("Invalid selection.")
+                continue
 
-    choice = input(
-        f"Select 1-{len(suggestions)} to continue, or press Enter to cancel: "
-    ).strip()
-    if not choice:
-        raise DatatrackerError("Selection cancelled.")
-    if not choice.isdigit():
-        raise DatatrackerError("Invalid selection.")
+            selected = matches[selection - 1]
+            return "ok", WorkingGroup(
+                acronym=selected.acronym.lower(),
+                name=selected.name,
+            )
 
-    selection = int(choice)
-    if selection < 1 or selection > len(suggestions):
-        raise DatatrackerError("Invalid selection.")
-    return suggestions[selection - 1]
+
+def _resolve_from_wg_name_flow() -> tuple[str, WorkingGroup | None]:
+    while True:
+        query = _read_nav_input("What Working Group are you interested in? ")
+        if query == NAV_BACK:
+            return NAV_BACK, None
+        if query == NAV_QUIT:
+            return NAV_QUIT, None
+        if not query:
+            print("No working group input supplied.")
+            continue
+
+        resolution: WgResolutionResult = resolve_wg_name(query)
+        if resolution.matched:
+            return "ok", resolution.matched
+
+        suggestions = resolution.suggestions
+        if not suggestions:
+            print(f"No WG matched '{query}'.")
+            continue
+
+        print(f"No exact WG found for '{query}'. Did you mean:")
+        for idx, candidate in enumerate(suggestions, start=1):
+            print(f"{idx}. {candidate.acronym.upper()} - {candidate.name}")
+
+        while True:
+            choice = _read_nav_input(
+                f"Select 1-{len(suggestions)} to continue: "
+            )
+            if choice == NAV_BACK:
+                break
+            if choice == NAV_QUIT:
+                return NAV_QUIT, None
+            if not choice.isdigit():
+                print("Invalid selection.")
+                continue
+
+            selection = int(choice)
+            if selection < 1 or selection > len(suggestions):
+                print("Invalid selection.")
+                continue
+            return "ok", suggestions[selection - 1]
+
+
+def _wg_feature_menu(wg: WorkingGroup) -> str:
+    while True:
+        print(f"\nMatched WG: {wg.acronym.upper()} - {wg.name}")
+        print("Options:")
+        print("1. Summary of WG")
+        print("2. Active drafts")
+        print("3. Draft discussions in a WG (last 3 months)")
+        print("b. Back")
+        print("q. Quit")
+
+        option = _read_nav_input("Select option: ")
+        if option == NAV_BACK:
+            return NAV_BACK
+        if option == NAV_QUIT:
+            return NAV_QUIT
+
+        try:
+            if option == "1":
+                charter = get_wg_charter(wg.acronym)
+                print(
+                    f"\nComplete charter for {charter.wg_name} "
+                    f"({charter.wg_id.upper()}):"
+                )
+                print(charter.charter_text)
+            elif option == "2":
+                drafts = get_wg_active_drafts(wg.acronym, limit=ACTIVE_DRAFTS_LIMIT)
+                print("\n" + _format_active_drafts(drafts))
+            elif option == "3":
+                summary = get_wg_discussion_summary(wg.acronym, window_days=90)
+                print("\n" + _format_discussion_summary(summary))
+            else:
+                print("Unsupported option.")
+        except DatatrackerError as exc:
+            print(f"Error: {exc}")
 
 
 def main() -> None:
     print("IETF WG Agent")
     print("------------")
-    print("User Types:")
-    print("1. New engineer (technology onboarding)")
-    print("2. Experienced engineer (known WG)")
 
-    try:
-        user_type = input("Select user type (1 or 2): ").strip()
+    while True:
+        print("\nUser Types:")
+        print("1. New engineer (technology onboarding)")
+        print("2. Experienced engineer (known WG)")
+
+        user_type = _read_nav_input("Select user type (1 or 2): ")
+        if user_type == NAV_QUIT:
+            print("Goodbye.")
+            return
+        if user_type == NAV_BACK:
+            print("Already at top-level menu.")
+            continue
+
         if user_type == "1":
-            wg = _resolve_from_technology_flow()
+            status, wg = _resolve_from_technology_flow()
         elif user_type == "2":
-            wg = _resolve_from_wg_name_flow()
+            status, wg = _resolve_from_wg_name_flow()
         else:
             print("Invalid user type selection.")
+            continue
+
+        if status == NAV_QUIT:
+            print("Goodbye.")
             return
+        if status == NAV_BACK or wg is None:
+            continue
 
-        print(f"Matched WG: {wg.acronym.upper()} - {wg.name}")
-        print("\nOptions:")
-        print("1. Summary of WG")
-        print("2. Active drafts")
-        option = input("Select option: ").strip()
-
-        if option == "1":
-            charter = get_wg_charter(wg.acronym)
-            print(f"\nComplete charter for {charter.wg_name} ({charter.wg_id.upper()}):")
-            print(charter.charter_text)
-        elif option == "2":
-            drafts = get_wg_active_drafts(wg.acronym, limit=0)
-            print("\n" + _format_active_drafts(drafts))
-        else:
-            print("Unsupported option.")
-
-    except DatatrackerError as exc:
-        print(f"Error: {exc}")
+        menu_status = _wg_feature_menu(wg)
+        if menu_status == NAV_QUIT:
+            print("Goodbye.")
+            return
 
 
 if __name__ == "__main__":

@@ -26,7 +26,7 @@ Strong coverage:
 
 Coverage gaps to improve:
 - Captured HTML fixture contract tests.
-- Technology-onboarding/vector DB workflow tests (feature not yet implemented).
+- Deeper technology-onboarding/vector DB ranking quality tests (current path implemented; needs richer fixture coverage).
 - Draft tracker tests (feature not yet implemented).
 - Webex-mode parity tests (mode not yet implemented).
 

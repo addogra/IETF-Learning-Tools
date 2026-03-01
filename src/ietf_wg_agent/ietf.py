@@ -1008,10 +1008,14 @@ def get_wg_discussion_summary(
     months = max(1, math.ceil(days / 30))
     posts = fetch_wg_discussions_last_months(wg.acronym, months=months)
     filtered = _filter_posts_by_window_days(posts, window_days=days)
+    if days % 30 == 0:
+        period_label = f"last {max(1, days // 30)} months"
+    else:
+        period_label = f"last {days} days"
     summary = summarize_discussions(
         filtered,
         max_subjects=5,
-        period_label=f"last {days} days",
+        period_label=period_label,
     )
     return DiscussionSummary(
         wg_id=wg.acronym,
@@ -1723,7 +1727,8 @@ def fetch_top_active_drafts(
 def _parse_mailarchive_date(value: str) -> Optional[datetime]:
     if not value:
         return None
-    clean = value.strip().replace("Z", "+00:00")
+    clean = re.sub(r"\s+", " ", value.strip())
+    clean = clean.replace(" UTC", " +00:00").replace("Z", "+00:00")
     candidates = [
         clean,
         clean.split(" ")[0],
@@ -1732,7 +1737,31 @@ def _parse_mailarchive_date(value: str) -> Optional[datetime]:
         try:
             return datetime.fromisoformat(candidate)
         except ValueError:
-            continue
+            pass
+
+    formats = [
+        "%Y-%m-%d %H:%M:%S%z",
+        "%Y-%m-%d %H:%M%z",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%Y-%m-%d",
+        "%a, %d %b %Y %H:%M:%S %z",
+        "%a, %d %b %Y %H:%M %z",
+        "%d %b %Y %H:%M:%S %z",
+        "%d %b %Y %H:%M %z",
+        "%b %d, %Y %H:%M:%S",
+        "%b %d, %Y %H:%M",
+        "%b %d, %Y",
+        "%B %d, %Y %H:%M:%S",
+        "%B %d, %Y %H:%M",
+        "%B %d, %Y",
+    ]
+    for candidate in candidates:
+        for fmt in formats:
+            try:
+                return datetime.strptime(candidate, fmt)
+            except ValueError:
+                continue
     return None
 
 
@@ -1740,6 +1769,28 @@ def _to_utc_naive(dt: datetime) -> datetime:
     if dt.tzinfo is None:
         return dt
     return dt.astimezone(timezone.utc).replace(tzinfo=None)
+
+
+def _parse_date_from_metadata_line(line: str) -> tuple[Optional[datetime], str]:
+    clean = re.sub(r"\s+", " ", line.strip())
+    if not clean:
+        return None, ""
+
+    # Restrict line-based fallbacks to explicit date/time metadata labels.
+    # This avoids false positives from subjects like "(Ends 2026-01-30)".
+    m = re.search(
+        r"\b(?:date|sent|posted|time)\b\s*[:\-]?\s*(.+)$",
+        clean,
+        flags=re.IGNORECASE,
+    )
+    if not m:
+        return None, ""
+
+    raw = m.group(1).strip()
+    parsed = _parse_mailarchive_date(raw)
+    if parsed is None:
+        return None, ""
+    return parsed, raw
 
 
 def _extract_discussion_posts_from_page(
@@ -1770,6 +1821,51 @@ def _extract_discussion_posts_from_page(
                 " ", strip=True
             )
             date_obj = _parse_mailarchive_date(date_text)
+
+        # Fallback: parse date from common metadata attributes/text when <time>
+        # is missing on archive list pages.
+        if date_obj is None and container:
+            for attr in ("datetime", "data-date", "data-datetime", "title"):
+                node = container.find(attrs={attr: True})
+                if not node:
+                    continue
+                raw = str(node.get(attr, "")).strip()
+                parsed = _parse_mailarchive_date(raw)
+                if parsed is not None:
+                    date_text = raw
+                    date_obj = parsed
+                    break
+
+        if date_obj is None and container:
+            # Secondary fallback: date/time-tagged nodes without datetime attrs.
+            metadata_nodes = container.find_all(
+                lambda tag: bool(
+                    tag
+                    and (
+                        "date" in " ".join(str(x).lower() for x in tag.get("class", []))
+                        or "time"
+                        in " ".join(str(x).lower() for x in tag.get("class", []))
+                        or "date" in str(tag.get("id", "")).lower()
+                        or "time" in str(tag.get("id", "")).lower()
+                    )
+                )
+            )
+            for node in metadata_nodes:
+                raw = node.get_text(" ", strip=True)
+                parsed = _parse_mailarchive_date(raw)
+                if parsed is not None:
+                    date_text = raw
+                    date_obj = parsed
+                    break
+
+        if date_obj is None and container:
+            # Last fallback: parse only lines that look like explicit metadata.
+            for line in container.get_text("\n", strip=True).splitlines():
+                parsed, raw = _parse_date_from_metadata_line(line)
+                if parsed is not None:
+                    date_text = raw
+                    date_obj = parsed
+                    break
 
         author = ""
         if container:

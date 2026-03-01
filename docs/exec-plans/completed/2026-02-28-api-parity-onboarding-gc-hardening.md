@@ -24,7 +24,7 @@ Deliver the next priority follow-ups after vector DB baseline:
    - `UpcomingMeetingSummary`, `LastMeetingSummary`
    - `DraftTrackerResult`, `SubscriptionConfig`, `SchedulerResult`, `DailyUpdateResult`
 3. Wired user-facing technology onboarding:
-   - CLI onboarding trigger (`tech`) and ranked WG selection from vector DB.
+   - CLI User Type A prompt (`What technology area are you interested in?`) and ranked WG selection from vector DB.
    - MCP tool `technology_onboarding(query, top_k=10, require_all_terms=True)`.
 4. Deepened maintainer garbage collector semantic rules:
    - API-doc status alignment checks.
@@ -56,4 +56,4 @@ Result:
 # Remaining
 - Expose draft tracker on CLI/MCP user path.
 - Webex delivery mode parity.
-- Full charter output mode and richer meeting-summary output.
+- Richer meeting-summary output.

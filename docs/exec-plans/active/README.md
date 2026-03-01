@@ -6,4 +6,4 @@ Use format: `YYYY-MM-DD-<short-title>.md`.
 
 ## Current Plans
 
-- `2026-02-28-requirements-parity-phase-1.md` - close the highest-impact requirement gaps (technology onboarding/vector DB, API contract alignment, UX contract parity, and missing delivery modes/features).
+- `2026-02-28-requirements-parity-phase-1.md` - close remaining highest-impact gaps (draft-tracker user route, meeting-summary enrichment, and delivery-mode parity).

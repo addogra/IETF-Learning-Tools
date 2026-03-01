@@ -26,9 +26,11 @@ Use it before changing parsing logic, runtime flows, or module interfaces.
 - `data-sources.md`: source endpoints and fallback rules.
 - `parser-strategy.md`: parsing approach and expected failure modes.
 - `../DESIGN.md`: system-level architecture + flowcharts.
-- `internal-api-contract.md`: normative REQ-API name matrix, status, wrappers, and gaps.
+- `internal-api-contract.md`: normative REQ-API name matrix and wrapper mappings.
 - `../../SKILLS.md`: skill registry for feature-level operational contracts.
 - `vector-db-implementation-walkthrough.md`: implementation decisions + step-by-step flow for charter vector DB and maintainer commands.
+- `diagrams/req-feat-001-005-architecture.puml`: PlantUML source for complete onboarding slice architecture.
+- `diagrams/req-feat-001-005-architecture.svg`: rendered architecture diagram for REQ-FEAT-001..005.
 
 ## Module Design Docs
 - `modules/cli-module.md`: CLI implementation and control flow.

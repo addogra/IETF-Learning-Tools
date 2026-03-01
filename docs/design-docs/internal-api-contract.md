@@ -1,6 +1,6 @@
 # Internal API Contract (Requirement-Named Surface)
 
-Date: 2026-02-28
+Date: 2026-03-01
 Scope: REQ-API-001..006 implementation surface and maintainer drift checks
 
 ## Purpose
@@ -33,10 +33,15 @@ All contract wrappers return explicit result models declared in `ietf.py`:
 
 ## Integration Surfaces
 - CLI technology onboarding route: `src/ietf_wg_agent/cli.py`
-  - input trigger: type `tech`
-  - powered by `suggest_wgs_by_technology`
+  - User Type A prompt: `What technology area are you interested in?`
+  - powered by `suggest_wgs_by_technology(...)`
+- CLI WG summary route: `src/ietf_wg_agent/cli.py`
+  - menu option `1. Summary of WG`
+  - powered by `get_wg_charter(...)` (complete charter text)
 - MCP technology onboarding tool: `src/ietf_wg_agent/server.py`
   - tool: `technology_onboarding(query, top_k=10, require_all_terms=True)`
+- MCP WG summary tool: `src/ietf_wg_agent/server.py`
+  - tool: `summary_of_wg(query)` now returns complete charter text
 
 ## Maintainer Enforcement
 `ietf-wg-maintainer garbage-collector` verifies:

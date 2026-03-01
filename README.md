@@ -14,9 +14,10 @@ Start here if you are new to the codebase:
 ## Project Status Snapshot (Coded, Not Runtime-Verified Here)
 
 Implemented:
+- REQ-FEAT-001..005 onboarding slice in CLI.
 - WG resolution and ranked suggestions.
-- Charter retrieval + summary output.
-- Top 5 active drafts with status and abstract extraction.
+- Complete charter retrieval (non-truncated output in CLI and MCP).
+- Active drafts retrieval (CLI uses latest 10 for performance).
 - WG discussion summaries (last 3 months and last 1 day modes).
 - Upcoming IETF agenda summary and last IETF meeting summary.
 - Daily report and email delivery with retry/backoff/jitter.
@@ -25,7 +26,6 @@ Implemented:
 Known requirement gaps:
 - Draft tracker user-facing route is not yet exposed in CLI/MCP, but API wrapper is implemented.
 - Webex bot delivery mode is not yet implemented.
-- Full (non-truncated) charter output mode is a tracked gap.
 - Last-2-meeting response currently favors links over agenda/minutes summaries.
 
 ## What it does
@@ -36,7 +36,8 @@ Known requirement gaps:
 - Resolves technology/WG input against the local charter vector DB with Datatracker fallback.
 - Provides:
   - `Summary of WG` with complete charter text (non-truncated).
-  - `Active drafts` returning all currently parsed active drafts with identifier/title/status.
+  - `Active drafts` returning the latest 10 parsed active drafts with identifier/title/status.
+  - `Draft discussions in a WG (last 3 months)` with topic/participant/thread summary.
 - Includes daily runner and scheduler entrypoints for later requirement phases.
 
 ## Install (Cross-Platform)
@@ -145,8 +146,11 @@ Prompts:
 - `Select user type (1 or 2)`
 - User type `1`: `What technology area are you interested in?`
 - User type `2`: `What Working Group are you interested in?`
+- Selection prompt: `Select 1-<n> to continue with a WG:`
 - Option `1. Summary of WG` (complete charter text, non-truncated)
-- Option `2. Active drafts` (all active drafts with identifier/title/status)
+- Option `2. Active drafts` (latest 10 active drafts with identifier/title/status)
+- Option `3. Draft discussions in a WG (last 3 months)`
+- WG feature-menu navigation: `b` (back to previous menu), `q` (quit)
 
 ## Run daily job manually
 
@@ -159,8 +163,8 @@ It also attempts to send one email per subscribed user.
 
 ## Email configuration
 
-Only user email is required in the app flow (it asks during `ietf-wg-agent`).
-SMTP settings are optional and have defaults.
+CLI onboarding no longer asks for email in the initial flow.
+SMTP settings remain optional and are used by daily-runner commands.
 
 Default behavior:
 - Host: `localhost`

@@ -107,6 +107,12 @@ REQ-ENG-004
   - Skills layer
   - Webex bot
 
+REQ-ENG-005
+- For any new feature or bug fix that changes flow/architecture/interaction behavior:
+  - update PlantUML source artifacts, and
+  - update rendered diagram artifacts (SVG/PNG as applicable),
+  under `docs/design-docs/diagrams/`.
+
 
 5. Core User Features
 
@@ -295,6 +301,18 @@ REQ-DOC-002
   - docs/exec-plans/completed/
   - docs/exec-plans/tech-debt-tracker.md
 
+REQ-DOC-003
+- `AGENTS.md` MUST define a startup context-bootstrap read order that includes onboarding/design/plan/debt docs.
+- Agents MUST traverse that read order before implementation work.
+
+REQ-DOC-004
+- `Lessons.md` MUST be maintained as a cumulative implementation-learning log.
+- Any new feature or bug fix MUST append/update relevant lessons.
+
+REQ-DOC-005
+- `coding_practices.md` MUST define coding standards, review standards, and test considerations.
+- Any new feature or bug fix MUST follow it and update it when standards evolve.
+
 
 13. Acceptance Criteria (High-Level)
 - AC-1: New engineer enters technology phrase and gets ranked relevant WGs with rationale.
@@ -306,5 +324,6 @@ REQ-DOC-002
 - AC-7: Draft tracker returns timeline/history and related discussion context.
 - AC-8: Maintainer can rebuild charter vector DB; previous DB is removed first.
 - AC-9: All features work across CLI, MCP, Webex bot, and skills definitions.
+- AC-10: For every feature/bug delivery, PlantUML artifacts and `Lessons.md`/`coding_practices.md` are updated when impacted.
 
 End of Requirements.

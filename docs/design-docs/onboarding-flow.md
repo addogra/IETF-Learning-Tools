@@ -16,10 +16,13 @@ This document is the short version and should remain aligned with that guide.
 1. `requirements.txt`
 2. `docs/product-specs/new-user-onboarding.md`
 3. `ARCHITECTURE.md`
-4. `docs/DESIGN.md`
-5. `docs/design-docs/index.md`
-6. `docs/exec-plans/active/2026-02-28-requirements-parity-phase-1.md`
-7. `docs/exec-plans/tech-debt-tracker.md`
+4. `AGENTS.md`
+5. `Lessons.md`
+6. `coding_practices.md`
+7. `docs/DESIGN.md`
+8. `docs/design-docs/index.md`
+9. `docs/exec-plans/completed/2026-03-01-req-feat-001-005-docs-sync.md`
+10. `docs/exec-plans/tech-debt-tracker.md`
 
 ## First Local Run
 
@@ -42,6 +45,10 @@ flowchart LR
   Core --> MA[Mailarchive]
 ```
 
+PlantUML architecture artifact for onboarding slice:
+- `docs/design-docs/diagrams/req-feat-001-005-architecture.puml`
+- `docs/design-docs/diagrams/req-feat-001-005-architecture.svg`
+
 ## Contribution Flow
 
 1. Pick requirement-linked task from active plan/tech debt.
@@ -49,4 +56,6 @@ flowchart LR
 3. Add tests (CLI-path + parser/unit).
 4. Run full tests.
 5. Update docs and execution-plan files.
-6. Submit PR with requirement IDs and risk notes.
+6. Update PlantUML source/render artifacts for flow/architecture changes.
+7. Update `Lessons.md` and `coding_practices.md` when impacted.
+8. Submit PR with requirement IDs and risk notes.

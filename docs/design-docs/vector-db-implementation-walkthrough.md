@@ -190,7 +190,8 @@ Test run:
 ## 8. Known Gaps After This Slice
 - Draft tracker user-facing CLI/MCP route is pending (`TD-003`).
 - Webex delivery mode parity remains pending (`TD-002`).
-- Full charter output mode and richer meeting summaries are still pending (`TD-004`, `TD-005`).
+- Richer meeting summaries are still pending (`TD-005`).
+- Technology-onboarding output UX cleanup (hide score by default) is pending (`TD-011`).
 
 ## 9. Related Docs
 - `docs/design-docs/internal-api-contract.md`

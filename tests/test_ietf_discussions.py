@@ -97,3 +97,48 @@ def test_summarize_discussions_output():
     assert "Draft discussions summary (last 3 months):" in summary
     assert "Total discussion posts: 2" in summary
     assert "Recent discussion threads:" in summary
+
+
+def test_fetch_wg_discussions_parses_date_without_time_tag(monkeypatch):
+    html = """
+    <html><body>
+      <div>
+        <a href="/arch/msg/lsr/abc123/">Thread A</a>
+        <span>Date: 2099-01-10 12:00 UTC</span>
+        <span>from: Alice</span>
+      </div>
+    </body></html>
+    """
+
+    def fake_get(url, timeout=20):
+        assert url.endswith("/arch/browse/lsr/")
+        return _FakeResponse(html)
+
+    monkeypatch.setattr(ietf.requests, "get", fake_get)
+
+    posts = ietf.fetch_wg_discussions_last_months("lsr", months=3)
+    assert len(posts) == 1
+    assert posts[0].date != "Unknown date"
+    assert posts[0].date.startswith("2099-01-10")
+
+
+def test_fetch_wg_discussions_ignores_deadline_date_in_subject(monkeypatch):
+    html = """
+    <html><body>
+      <div>
+        <a href="/arch/msg/rtgwg/abc123/">
+          [rtgwg] Call for adoption: draft-foo (Ends 2099-01-30)
+        </a>
+        <span>from: Alice</span>
+      </div>
+    </body></html>
+    """
+
+    def fake_get(url, timeout=20):
+        assert url.endswith("/arch/browse/rtgwg/")
+        return _FakeResponse(html)
+
+    monkeypatch.setattr(ietf.requests, "get", fake_get)
+
+    posts = ietf.fetch_wg_discussions_last_day("rtgwg", days=1)
+    assert posts == []

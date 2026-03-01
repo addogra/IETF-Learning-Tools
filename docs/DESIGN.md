@@ -10,8 +10,8 @@ This document explains the complete design of `ietf-wg-agent` so a new engineer 
 
 ## 2. System Scope
 The application helps users monitor IETF Working Groups (WGs) by collecting and summarizing:
-- WG charter summary,
-- active drafts (top 5 with abstract + status),
+- complete WG charter text,
+- active drafts (latest 10 in onboarding flow, with title/status),
 - WG discussion summaries (last 3 months),
 - updates from last 2 IETF meetings (agenda + minutes),
 - daily updates (last day mailarchive activity, send only if activity exists),
@@ -144,16 +144,16 @@ Maintainer scope in the same codebase:
 
 ### 7.2 Summary of WG
 - Source: `https://datatracker.ietf.org/wg/<acronym>/about/`
-- Extract charter text and produce concise summary.
+- Extract full charter text and return non-truncated output.
 - If sections are missing, returns graceful fallback text.
 
 ### 7.3 Active Drafts
 - Source: `https://datatracker.ietf.org/wg/<acronym>/documents/`
-- Picks top 5 draft entries.
+- Picks latest 10 draft entries in onboarding flow for performance.
 - For each draft:
   - title,
   - status (from draft page/document metadata),
-  - abstract.
+  - identifier.
 - Parser is defensive to handle changing table layouts.
 
 ### 7.4 Draft Discussions in a WG
@@ -302,15 +302,16 @@ When adding a feature:
 ## 15. Implementation Status and Gaps
 
 ### Implemented (As-Coded)
+- REQ-FEAT-001..005 onboarding slice is complete in CLI.
 - WG resolve/suggest flow in CLI and MCP.
-- Charter retrieval with summary presentation.
-- Top-5 active draft extraction (title/status/abstract).
+- Charter retrieval with complete-charter output in CLI and MCP.
+- Active draft extraction with all-drafts mode in current CLI flow.
 - Discussion summaries (3 months and 1 day windows).
 - Upcoming and last IETF meeting summaries.
 - Daily delivery and scheduler flows with SMTP retry controls.
+- Iterative CLI navigation (`Back`/`Quit`) across REQ-FEAT-001..005 flow.
 
 ### Partial or Missing Against Requirements
-- Full charter output mode (non-truncated contract) is not fully exposed.
 - Last-2-meeting updates currently emphasize links over agenda/minutes summaries.
 - Technology-onboarding route is integrated in CLI/MCP, but Webex parity is pending.
 - Draft tracker API contract is implemented; user-facing CLI/MCP route is pending.

@@ -33,7 +33,7 @@ from ietf_wg_agent.ietf import (
     suggest_wgs_by_technology,
     suggest_working_groups,
 )
-from ietf_wg_agent.summarizer import summarize_charter, summarize_discussions
+from ietf_wg_agent.summarizer import summarize_discussions
 from ietf_wg_agent.subscriptions import register_daily_update
 
 try:
@@ -46,7 +46,7 @@ if FastMCP is not None:
     mcp = FastMCP("ietf-wg-agent")
 
     def _format_active_drafts(drafts: list[DraftInfo]) -> str:
-        lines = ["Top 5 active drafts from WG documents:"]
+        lines = ["Active drafts from WG documents:"]
         if not drafts:
             lines.append("- No drafts found.")
             return "\n".join(lines)
@@ -170,7 +170,7 @@ if FastMCP is not None:
 
     @mcp.tool()
     def summary_of_wg(query: str) -> str:
-        """Fetch and summarize the charter for the selected working group."""
+        """Fetch complete charter text for the selected working group."""
         try:
             groups = fetch_working_groups()
             wg = resolve_working_group(query, groups)
@@ -184,8 +184,10 @@ if FastMCP is not None:
                 return "\n".join(lines)
 
             charter = fetch_charter_text(wg.acronym)
-            summary = summarize_charter(charter)
-            return f"WG: {wg.acronym.upper()} - {wg.name}\n{summary}"
+            return (
+                f"Complete charter for {wg.name} ({wg.acronym.upper()}):\n"
+                f"{charter}"
+            )
         except DatatrackerError as exc:
             return f"Error: {exc}"
 
@@ -208,7 +210,7 @@ if FastMCP is not None:
 
     @mcp.tool()
     def active_drafts_and_recent_rfcs(query: str) -> str:
-        """Fetch top 5 active drafts and abstracts from WG documents page."""
+        """Fetch active drafts and abstracts from WG documents page."""
         groups = fetch_working_groups()
         wg = resolve_working_group(query, groups)
         if not wg:
@@ -220,13 +222,13 @@ if FastMCP is not None:
                 lines.append(f"- {candidate.acronym.upper()} - {candidate.name}")
             return "\n".join(lines)
 
-        drafts = fetch_top_active_drafts(wg.acronym, limit=5)
+        drafts = fetch_top_active_drafts(wg.acronym, limit=10)
         body = _format_active_drafts(drafts)
         return f"WG: {wg.acronym.upper()} - {wg.name}\n{body}"
 
     @mcp.tool()
     def active_drafts(query: str) -> str:
-        """Fetch top 5 active drafts and abstracts from WG documents page."""
+        """Fetch active drafts and abstracts from WG documents page."""
         return active_drafts_and_recent_rfcs(query)
 
     @mcp.tool()

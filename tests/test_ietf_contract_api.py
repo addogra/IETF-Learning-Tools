@@ -87,6 +87,29 @@ def test_get_wg_discussion_summary_wrapper_filters_window(monkeypatch):
     assert "last 1 days" in summary.summary
 
 
+def test_get_wg_discussion_summary_wrapper_uses_month_label_for_90_days(monkeypatch):
+    wg = WorkingGroup(acronym="lsr", name="Link State Routing")
+    _mock_resolve(monkeypatch, wg)
+
+    now = datetime.now(timezone.utc)
+    post = DiscussionPost(
+        date=now.isoformat(),
+        subject="Thread",
+        author="Alice",
+        url="https://mailarchive.ietf.org/arch/msg/lsr/new/",
+    )
+    monkeypatch.setattr(
+        ietf,
+        "fetch_wg_discussions_last_months",
+        lambda _ac, months=3: [post],
+    )
+
+    summary = ietf.get_wg_discussion_summary("lsr", window_days=90)
+
+    assert summary.post_count == 1
+    assert "last 3 months" in summary.summary
+
+
 def test_get_wg_last_two_meeting_updates_wrapper(monkeypatch):
     wg = WorkingGroup(acronym="lsr", name="Link State Routing")
     _mock_resolve(monkeypatch, wg)

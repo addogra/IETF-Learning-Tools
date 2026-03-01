@@ -80,3 +80,72 @@ def test_server_registers_and_runs_with_fake_mcp():
     server.main()
     assert server.mcp.run_called is True
     assert server.mcp.transport == "stdio"
+
+
+def test_summary_of_wg_returns_complete_charter(monkeypatch):
+    server = _reload_server_module(with_fake_mcp=True)
+
+    class _WG:
+        def __init__(self, acronym: str, name: str):
+            self.acronym = acronym
+            self.name = name
+
+    monkeypatch.setattr(
+        server,
+        "fetch_working_groups",
+        lambda: [_WG("lsr", "Link State Routing")],
+    )
+    monkeypatch.setattr(
+        server,
+        "resolve_working_group",
+        lambda query, groups: _WG("lsr", "Link State Routing"),
+    )
+    monkeypatch.setattr(
+        server,
+        "fetch_charter_text",
+        lambda acronym: "Complete charter text without truncation.",
+    )
+
+    out = server.mcp.tools["summary_of_wg"]("LSR")
+    assert "Complete charter for Link State Routing (LSR):" in out
+    assert "Complete charter text without truncation." in out
+
+
+def test_active_drafts_tool_uses_limit_10(monkeypatch):
+    server = _reload_server_module(with_fake_mcp=True)
+
+    class _WG:
+        def __init__(self, acronym: str, name: str):
+            self.acronym = acronym
+            self.name = name
+
+    monkeypatch.setattr(
+        server,
+        "fetch_working_groups",
+        lambda: [_WG("lsr", "Link State Routing")],
+    )
+    monkeypatch.setattr(
+        server,
+        "resolve_working_group",
+        lambda query, groups: _WG("lsr", "Link State Routing"),
+    )
+
+    limits: list[int] = []
+
+    class _Draft:
+        def __init__(self):
+            self.name = "draft-ietf-lsr-example-00"
+            self.title = "Example"
+            self.status = "WG Document"
+            self.abstract = "Abstract"
+            self.url = "https://datatracker.ietf.org/doc/draft-ietf-lsr-example-00/"
+
+    def _fake_fetch(acronym: str, limit: int = 5):
+        limits.append(limit)
+        return [_Draft()]
+
+    monkeypatch.setattr(server, "fetch_top_active_drafts", _fake_fetch)
+
+    out = server.mcp.tools["active_drafts"]("LSR")
+    assert limits == [10]
+    assert "draft-ietf-lsr-example-00" in out

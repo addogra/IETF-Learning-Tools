@@ -1,6 +1,6 @@
 # New Developer Onboarding Guide
 
-Version: 2026-02-28
+Version: 2026-03-01
 Scope: Day 0 to first production-ready pull request
 
 ## 1. What This Project Is
@@ -35,17 +35,17 @@ This section is based on repository code + tests review, not live end-to-end exe
 |---|---|---|
 | WG resolution by acronym/full name (`REQ-FEAT-002`) | Coded | Implemented in `ietf.py`, used in CLI/MCP. |
 | WG suggestions for ambiguous input (`REQ-UX-003`) | Coded | Ranked suggestions exist for typos and partial names. |
-| WG charter retrieval (`REQ-FEAT-003`) | Partially coded | Charter fetch exists; default UX returns summary, not guaranteed full charter output mode. |
-| Active drafts top 5 with status+abstract (`REQ-FEAT-004`) | Coded | API + HTML fallback parsing implemented. |
+| WG charter retrieval (`REQ-FEAT-003`) | Coded | CLI and MCP return complete non-truncated charter text. |
+| Active drafts (`REQ-FEAT-004`) | Coded | CLI returns latest 10 active drafts with identifier/title/status; parser still supports richer metadata extraction. |
 | Last 3 months discussion summary (`REQ-FEAT-005`) | Coded | Mailarchive parser with bounded pagination. |
 | Last 2 WG meetings updates (`REQ-FEAT-006`) | Partially coded | Agenda/minutes links available; summary text enrichment gap remains. |
 | Daily updates only when new content exists (`REQ-FEAT-007`, `REQ-REL-003`) | Coded | Discussion-update email skips send when no updates. |
 | Upcoming IETF meeting agenda summary (`REQ-FEAT-008`) | Coded | Next meeting metadata + WG agenda summaries implemented. |
 | Last completed IETF meeting summary (`REQ-FEAT-009`) | Coded | Meeting detection + WG minutes summaries implemented. |
 | Draft tracker (`REQ-FEAT-010`) | Partially coded | Internal tracker API exists (`track_draft_or_rfc`), but user-facing CLI/MCP route remains pending. |
-| Technology onboarding + charter vector DB (`REQ-FEAT-001`, `REQ-VDB-*`, `REQ-MAINT-*`) | Coded (CLI/MCP) | Maintainer DB lifecycle + matching APIs are coded and user-facing onboarding is wired in CLI/MCP; Webex parity remains pending. |
+| Technology onboarding + charter vector DB (`REQ-FEAT-001`, `REQ-VDB-*`, `REQ-MAINT-*`) | Coded (CLI/MCP) | Maintainer DB lifecycle + matching APIs are coded and user-facing onboarding is wired in CLI/MCP. |
 | Webex delivery mode parity (`REQ-MODE-001`) | Not coded | Explicit gap. |
-| Iterative follow-up and always offer Quit (`REQ-INPUT-002`, `REQ-UX-001`) | Partially coded | Current CLI is mostly one-shot menu flow. |
+| Iterative follow-up and always offer Quit (`REQ-INPUT-002`, `REQ-UX-001`) | Coded (REQ-FEAT-001..005 flow) | CLI now supports iterative menus with explicit `Back` and `Quit` navigation for onboarding + WG options 1-3. |
 | Internal API contract naming (`REQ-API-001..006`) | Coded | All requirement-named wrappers are implemented in `ietf.py`. |
 
 ### 3.2 What Is Implemented in Code Today
@@ -83,18 +83,15 @@ Tracked in `docs/exec-plans/tech-debt-tracker.md`. Current priorities:
 - High:
   - `TD-002` Webex mode parity
   - `TD-003` draft tracker
-  - `TD-004` full charter output mode
   - `TD-005` meeting update summaries
 - Medium:
-  - `TD-001` user-facing technology onboarding integration (after DB lifecycle baseline)
-  - `TD-006` iterative CLI options + explicit quit path
-  - `TD-007` internal API naming contract
   - `TD-008` expand garbage collector checks depth
   - `TD-009` parser fixture-based contract tests
+  - `TD-011` clean onboarding output by hiding debug score in default view
 - Low:
   - `TD-010` deeper mailarchive pagination strategy
 
-If you are new, start from `TD-001` through `TD-005`; these unlock most requirement parity.
+If you are new, start from `TD-002`, `TD-003`, and `TD-005`; these are the remaining highest-impact parity gaps.
 
 ## 5. Architecture Overview
 
@@ -162,6 +159,8 @@ Top-level:
 - `ARCHITECTURE.md`: runtime architecture summary.
 - `README.md`: run/install quick reference.
 - `AGENTS.md`: engineering process constraints.
+- `Lessons.md`: cumulative lessons learned from implemented features/bugs.
+- `coding_practices.md`: coding/review/test standards used in this repo.
 - `SKILLS.md` + `skills/*/SKILL.md`: skill-level behavior docs.
 - `docs/`: product specs, design docs, execution plans, quality/security/reliability docs.
   - API contract reference: `docs/design-docs/internal-api-contract.md`
@@ -298,6 +297,8 @@ Before coding:
 1. Read `requirements.txt` for requirement IDs.
 2. Read `ARCHITECTURE.md` for module boundaries.
 3. Check active plan in `docs/exec-plans/active/`.
+4. Read `AGENTS.md` startup bootstrap section and traverse listed onboarding docs.
+5. Read `Lessons.md` and `coding_practices.md` before design/implementation decisions.
 
 While coding:
 1. Keep parser behavior deterministic with fallback paths.
@@ -309,6 +310,9 @@ While coding:
    - active work
    - completed work
    - tech debt entries
+5. If feature/bug changes architecture or flow, update PlantUML source + rendered SVG artifacts.
+6. Update `Lessons.md` for newly learned implementation lessons.
+7. Update `coding_practices.md` when standards/review/test expectations change.
 
 ## 9.3 Commit
 
@@ -341,6 +345,8 @@ PR checklist:
 4. Include docs updated.
 5. Include execution-plan updates.
 6. Keep PR scoped and reviewable.
+7. Confirm PlantUML artifacts are updated if flow/architecture changed.
+8. Confirm `Lessons.md` and `coding_practices.md` were reviewed and updated when applicable.
 
 ## 10. First Contribution Plan for New Engineers
 
@@ -352,11 +358,11 @@ Start with one small, complete slice:
 5. Ship one small PR.
 
 Then take one high-impact item:
-1. `TD-004` full charter output mode, or
+1. `TD-003` draft tracker user-facing route, or
 2. `TD-005` meeting summaries enrichment.
 
 After that, join foundational work:
-1. `TD-001` vector DB and technology onboarding.
+1. `TD-002` Webex delivery-mode parity.
 
 ## 11. Common Pitfalls and Fixes
 
@@ -394,3 +400,5 @@ A feature is done when all are true:
 4. User-facing docs are updated.
 5. `docs/exec-plans` active/completed/debt files are updated.
 6. Delivery mode implications are assessed (CLI, MCP, skills, Webex target).
+7. PlantUML source + render artifacts are updated for flow/architecture-impacting changes.
+8. `Lessons.md` and `coding_practices.md` are followed and updated when impacted.

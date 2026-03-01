@@ -37,6 +37,12 @@ Implemented:
 - `run_daily_wg_update(wg_id, notify=True) -> DailyUpdateResult`
 - `schedule_daily_updates(subscription) -> SchedulerResult`
 
+Current CLI usage notes:
+- REQ-FEAT-004 path uses `get_wg_active_drafts(..., limit=10)` for performance.
+- REQ-FEAT-005 path uses `get_wg_discussion_summary(..., window_days=90)` and
+  labels period as `last 3 months`.
+- REQ-FEAT-003 path uses `get_wg_charter(...)` and returns full charter text.
+
 Detailed matrix and status: `docs/design-docs/internal-api-contract.md`
 
 ## Vector DB Design
@@ -81,6 +87,8 @@ flowchart LR
 - Defensive parsing for variant Datatracker layouts.
 - Explicit `DatatrackerError` surfaces for caller-level handling.
 - Rebuild tolerates per-WG failures and records them under payload `errors`/`warnings`.
+- Mailarchive date fallback parsing is metadata-focused to avoid false positives from
+  subject deadlines such as `(Ends YYYY-MM-DD)`.
 
 ## Output Data Contracts
 - `RebuildResult`: rebuild summary fields (path, timestamp, counts, checksum).

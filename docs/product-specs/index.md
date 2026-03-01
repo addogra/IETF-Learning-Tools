@@ -9,6 +9,10 @@
   - requirement-vs-implementation status,
   - tech-debt and execution-plan map.
 
+Related root-level onboarding companions:
+- `../../Lessons.md` (lessons learned log)
+- `../../coding_practices.md` (coding/review/test standards)
+
 ## Feature Specs
 
 - `wg-summary-and-drafts.md`

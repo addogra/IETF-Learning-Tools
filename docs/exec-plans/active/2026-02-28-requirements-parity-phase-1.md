@@ -11,9 +11,7 @@ The codebase already implements core WG resolution, charter/draft/discussion ret
 Primary uncovered requirement clusters:
 - `REQ-MODE-001`: Webex bot delivery mode parity.
 - `REQ-FEAT-010`: draft tracker user-facing route.
-- `REQ-FEAT-003`: full charter output (current default flow summarizes).
 - `REQ-FEAT-006`: meeting update output lacks agenda/minutes summaries.
-- `REQ-INPUT-002`, `REQ-UX-001`: iterative next-options loop + explicit quit path after actions.
 
 # Scope
 In scope:
@@ -47,12 +45,10 @@ Out of scope for this phase:
 - Keep existing functions as compatibility wrappers during migration.
 
 3. User Feature Gaps
-- Add full charter output path (`get_wg_charter`) with non-truncated response mode.
 - Extend meeting update pipeline to generate short agenda/minutes summaries.
-- Implement `track_draft_or_rfc(identifier, include_vendor_signals=False)`.
+- Implement user-facing route for `track_draft_or_rfc(identifier, include_vendor_signals=False)`.
 
-4. UX + Delivery Mode Parity
-- Add iterative options/quit loop to CLI post-action flow.
+4. Delivery Mode Parity
 - Add Webex adapter skeleton and command parity checks for implemented features.
 
 5. Maintainer Operations
@@ -72,10 +68,9 @@ Mandatory gate:
 - `python -m pytest -q tests`
 
 # Exit Criteria
-- `REQ-FEAT-001`, `REQ-FEAT-003`, `REQ-FEAT-006`, `REQ-FEAT-010` implemented with tests.
+- `REQ-FEAT-006` and `REQ-FEAT-010` implemented with tests.
 - `REQ-API-001..006` function contracts available and documented.
 - `REQ-MODE-001` no longer blocked by missing Webex surface.
-- `REQ-INPUT-002` / `REQ-UX-001` satisfied in CLI interaction flow.
 - Remaining lower-priority issues tracked in `tech-debt-tracker.md`.
 
 # Progress Update (2026-02-28)
@@ -99,8 +94,16 @@ Mandatory gate:
     `get_upcoming_ietf_agenda_summary`, `get_last_ietf_meeting_summary`,
     `track_draft_or_rfc`, `run_daily_wg_update`, `schedule_daily_updates`
 - Wired user-facing technology onboarding:
-  - CLI route via `tech` onboarding trigger.
+  - CLI route via User Type A prompt (`What technology area are you interested in?`).
   - MCP tool `technology_onboarding(query, top_k, require_all_terms)`.
+- Implemented iterative CLI flow for REQ-FEAT-001..005:
+  - explicit `Back`/`Quit` navigation at user-type, WG-resolution, and feature-menu levels.
+- Implemented REQ-FEAT-005 in CLI feature menu:
+  - `Draft discussions in a WG (last 3 months)` from mailarchive via `get_wg_discussion_summary(..., window_days=90)`.
+- Aligned REQ-FEAT-003 behavior across MCP:
+  - `summary_of_wg(query)` now returns complete charter text (non-truncated).
+- Hardened discussion date parsing:
+  - metadata-first date extraction avoids false positives from subject deadlines.
 - Deepened garbage collector checks with semantic drift rules:
   - API-doc status alignment,
   - entrypoint contract alignment,
@@ -109,4 +112,4 @@ Mandatory gate:
 - Remaining in this plan:
   - draft tracker CLI/MCP user-facing route,
   - Webex parity,
-  - CLI iterative UX loop and full-charter mode.
+  - richer last-2-meeting summary enrichment.
