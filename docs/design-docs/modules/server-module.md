@@ -13,7 +13,7 @@ Expose CLI-equivalent capabilities as MCP tools.
 6. Support IETF meeting-oriented tools (upcoming agenda and last meeting summary).
 7. Format REQ-FEAT-006 output with explicit `Agendas` and `Minutes` sections.
 8. Format REQ-FEAT-008 output with event list + required important dates + WG agenda summaries.
-8. Return plain text payload for MCP clients.
+9. Return plain text payload for MCP clients.
 
 ## Stability Rule
 - MCP tools should mirror CLI behavior to avoid divergent outcomes.

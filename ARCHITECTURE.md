@@ -61,7 +61,6 @@ Completed for onboarding slice:
 - `REQ-FEAT-006`: updates from last 2 IETF meetings with agenda/minutes links.
 - `REQ-FEAT-008`: upcoming IETF agenda summary from `important-dates` + `agenda.txt`,
   including required milestone details and agenda links per IETF event.
-
 Notes on reliability:
 - Discussion parser now uses metadata-focused date extraction to avoid false positives from subject text deadlines (for example `Ends YYYY-MM-DD`).
 

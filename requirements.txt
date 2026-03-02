@@ -15,9 +15,12 @@ Purpose: Canonical implementation requirements for the IETF WG assistant.
   - Primary input: technology area of interest (example: "OSPF security", "BGP TLS", "BGP-LS extensions").
 - User Type B (experienced engineer, knows WGs):
   - Primary input: WG name (short or full; example: "LSR", "Link State Routing").
+- User Type C (SME, wants to work directly on specific drafts):
+  - Primary input: Draft or RFC title/identifier
+    (example: "rfc7166", "draft-ietf-idr-bgp-ls-bgp-only-fabric").
 
 REQ-INPUT-001
-- System MUST support both user types in the same interaction model.
+- System MUST support all three user types in the same interaction model.
 
 REQ-INPUT-002
 - System MUST ask iterative follow-up options after each action and MUST always offer "Quit".
@@ -141,6 +144,12 @@ REQ-FEAT-004: "Active drafts"
   - abstract
   - status (if available)
 
+REQ-FEAT-004A: "Active drafts MySQL acceleration"
+- System SHOULD support MySQL as an optional primary source for active drafts.
+- When MySQL source is configured and available, active-drafts retrieval SHOULD use it first.
+- If MySQL source is unavailable and source mode is `auto`, system MUST fall back to Datatracker live fetch.
+- If MySQL source mode is explicitly `mysql` and query fails, system MUST return actionable error text.
+
 REQ-FEAT-005: "Draft discussions in a WG"
 - Source: https://mailarchive.ietf.org/arch/browse/<wg>/
 - Summarize last 3 months of discussions.
@@ -195,11 +204,16 @@ REQ-FEAT-009: "Summary of last IETF meeting"
 
 REQ-FEAT-010: "Draft Tracker"
 - Input: RFC or draft identifier.
+- Applicability: User Type A, User Type B, and User Type C.
 - Output:
   - draft/RFC history timeline
   - related WG/mailarchive context
 - Optional extension:
   - vendor implementation signals (if available from reliable public sources).
+
+REQ-FEAT-010A: "Draft tracker diff integration"
+- Draft tracker SHOULD use `https://github.com/ietf-tools/iddiff` for revision-diff context when a previous draft revision exists.
+- If `iddiff` is unavailable, output MUST remain successful with explicit note that diff details were skipped.
 
 
 

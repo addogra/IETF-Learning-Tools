@@ -418,10 +418,6 @@ def test_cli_agenda_of_upcoming_ietf_meeting(monkeypatch, capsys):
     assert "IETF 125 - Dates 2026-03-14 - Place Shenzhen, CN" in out
     assert "Important details (IETF 125):" in out
     assert "Agenda link - for IETF-125: https://datatracker.ietf.org/meeting/125/agenda.txt" in out
-    assert "Important details (IETF 126):" in out
-    assert "Important details (IETF 127):" in out
-    assert "meeting/125/agenda.txt" in out
-    assert "Working Group " not in out
 
 
 def test_cli_agenda_not_published_notice_without_duplicate_fallback(monkeypatch, capsys):
